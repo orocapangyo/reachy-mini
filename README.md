@@ -16,3 +16,18 @@ reachy-mini는 소형 로봇 플랫폼 또는 소프트웨어 프로젝트로, �
 [![reachy-mini 소개 영상](https://img.youtube.com/vi/JvdBJZ-qR18/0.jpg)](https://youtu.be/JvdBJZ-qR18?si=qhe4JHv3QVOF-5la)
 
 해당 영상을 클릭하면 YouTube에서 자세한 내용을 확인할 수 있습니다.
+
+## 기여자 (Contributors)
+
+| No. | 이름 | 이메일 | GitHub |
+|-----|------|--------|---------|
+| 1 | 하범수 | habemsuz@gmail.com | BeomsuHa |
+| 2 | 이용준 | jylee1033@gmail.com | ylee1033 |
+| 3 | 이하린 | ihb0126@gmail.com | yabeeu0126 |
+| 4 | 나승현 | jws10375@gmail.com | - |
+| 5 | 이세현 | a93450311@gmail.com | - |
+| 6 | 임태완 | jennetime98@gmail.com | jenlime98 |
+| 7 | 이주선 | km01049@gmail.com | km01049 |
+| 8 | 서다원 | tjekdnjs96@gmail.com | - |
+| 9 | 정태웅 | jmoon8624@gmail.com | - |
+| 10 | 최정호 | ho8909585y@gmail.com  | - |

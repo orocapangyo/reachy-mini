@@ -1,4 +1,4 @@
-![image.png](attachment:abfc9d9e-23e0-4d9c-a886-0d6d3c408732:image.png)
+![image.png](attachment:../images/diff_table.png)
 
 ### **1. 도입 (Introduction) - 독자의 흥미를 유발**
 

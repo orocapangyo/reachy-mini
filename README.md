@@ -24,7 +24,7 @@ reachy-mini는 소형 로봇 플랫폼 또는 소프트웨어 프로젝트로, �
 | 1 | 하범수 | habemsu7@gmail.com | BeomsuHa |
 | 2 | 최정호 | ho8909585y@gmail.com   |  |
 | 3 | 이하빈 | ihb0126@gmail.com | yabeeu0126 |
-| 4 | 나승원 | jws10375@gmail.com | - |
+| 4 | 나승원 | jws10375@gmail.com | lala4768 |
 | 5 | 이세현 | a93450311@gmail.com | - |
 | 6 | 임태양 | jennetime98@gmail.com | jenlime98 |
 | 7 | 이주선 | km01049@gmail.com | km01049 |

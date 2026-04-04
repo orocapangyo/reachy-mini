@@ -1,0 +1,392 @@
+
+<style>
+  .vm-row{display:flex;align-items:center;gap:10px;margin:6px 0}
+  .vm-row label{font-size:12px;color:var(--color-text-secondary);min-width:64px;text-align:right}
+  .vm-row .vv{font-size:13px;font-weight:500;min-width:44px;color:var(--color-text-primary)}
+  .vm-legend{display:flex;gap:16px;margin-bottom:6px}
+  .vm-li{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--color-text-secondary)}
+  .vm-ld{width:20px;height:3px;border-radius:2px;flex-shrink:0}
+  .vm-charts canvas{width:100%;display:block}
+  .vm-btns{display:flex;gap:6px;margin:8px 0}
+  .vm-btns button{font-size:12px;padding:5px 14px}
+  .vm-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+  .vm-mc{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px}
+  .vm-mc-h{font-size:11px;font-weight:500;margin-bottom:4px}
+  .vm-mc-r{display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-secondary);padding:1.5px 0}
+  .vm-mc-r b{font-weight:500;color:var(--color-text-primary)}
+</style>
+
+<div class="vm-legend" id="leg"></div>
+
+<div class="vm-charts">
+  <canvas id="cv-vel" style="height:300px"></canvas>
+  <canvas id="cv-pos" style="height:160px"></canvas>
+</div>
+
+<div class="vm-btns">
+  <button onclick="play()">Play</button>
+  <button onclick="pause()">Pause</button>
+  <button onclick="reset()">Reset</button>
+  <span style="flex:1"></span>
+  <span style="font-size:12px;color:var(--color-text-secondary)" id="status">Ready</span>
+</div>
+
+<div class="vm-row">
+  <label>Time</label>
+  <input type="range" id="sl-t" min="0" max="1000" value="0" step="1" style="flex:1" oninput="scrub()">
+  <span class="vv" id="v-t">0.00 s</span>
+</div>
+<div class="vm-row">
+  <label>v_max</label>
+  <input type="range" id="sl-vm" min="50" max="200" value="100" step="5" style="flex:1" oninput="recompute()">
+  <span class="vv" id="v-vm">1.00</span>
+</div>
+<div class="vm-row">
+  <label>Distance</label>
+  <input type="range" id="sl-d" min="50" max="200" value="100" step="5" style="flex:1" oninput="recompute()">
+  <span class="vv" id="v-d">1.00</span>
+</div>
+
+<div class="vm-metrics" id="metrics"></div>
+
+<script>
+const dk=matchMedia('(prefers-color-scheme:dark)').matches;
+const M=[
+  {name:'Linear',color:'#888780'},
+  {name:'Ease',color:'#534AB7'},
+  {name:'Min. jerk',color:'#0F6E56'}
+];
+
+function linVn(u){return 1;}
+function easeVn(u){return u<.5 ? 12*u*u : 12*(1-u)*(1-u);}
+function mjVn(u){return 30*u*u - 60*u*u*u + 30*u*u*u*u;}
+const VN=[linVn, easeVn, mjVn];
+
+const PEAKS=[1.0, 3.0, 1.875];
+
+function linSn(u){return u;}
+function easeSn(u){return u<.5 ? 4*u*u*u : 1-Math.pow(-2*u+2,3)/2;}
+function mjSn(u){return 10*u*u*u - 15*u*u*u*u + 6*u*u*u*u*u;}
+const SN=[linSn, easeSn, mjSn];
+
+let vmax=1, dist=1, Ts=[], Tmax=1;
+let curTime=0, playing=false, animFrame=null;
+
+function recompute(){
+  vmax=parseInt(document.getElementById('sl-vm').value)/100;
+  dist=parseInt(document.getElementById('sl-d').value)/100;
+  document.getElementById('v-vm').textContent=vmax.toFixed(2);
+  document.getElementById('v-d').textContent=dist.toFixed(2);
+  Ts=PEAKS.map(p => p * dist / vmax);
+  Tmax=Math.max(...Ts)*1.1;
+  drawAll();
+}
+
+function getV(i,t){
+  if(t<0||t>Ts[i]) return 0;
+  const u=t/Ts[i];
+  return vmax * VN[i](u) / PEAKS[i];
+}
+
+function getS(i,t){
+  if(t<=0) return 0;
+  if(t>=Ts[i]) return dist;
+  const u=t/Ts[i];
+  return dist * SN[i](u);
+}
+
+const legEl=document.getElementById('leg');
+M.forEach(m=>{
+  const d=document.createElement('div');d.className='vm-li';
+  d.innerHTML=`<div class="vm-ld" style="background:${m.color}"></div>${m.name}`;
+  legEl.appendChild(d);
+});
+
+const cvVel=document.getElementById('cv-vel');
+const cvPos=document.getElementById('cv-pos');
+let ctxV,ctxP,Wv,Hv,Wp,Hp;
+const padV={l:52,r:16,t:28,b:30};
+const padP={l:52,r:16,t:14,b:28};
+
+function resizeAll(){
+  let r=cvVel.parentElement.getBoundingClientRect();
+  Wv=r.width; Hv=300;
+  cvVel.width=Wv*devicePixelRatio; cvVel.height=Hv*devicePixelRatio;
+  cvVel.style.width=Wv+'px'; cvVel.style.height=Hv+'px';
+  ctxV=cvVel.getContext('2d');
+  ctxV.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+
+  Wp=r.width; Hp=160;
+  cvPos.width=Wp*devicePixelRatio; cvPos.height=Hp*devicePixelRatio;
+  cvPos.style.width=Wp+'px'; cvPos.style.height=Hp+'px';
+  ctxP=cvPos.getContext('2d');
+  ctxP.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+}
+resizeAll();
+
+function gl(c,x1,y1,x2,y2){c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();}
+
+function drawVel(){
+  const c=ctxV;
+  c.clearRect(0,0,Wv,Hv);
+  const gc=dk?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.04)';
+  const tc=dk?'rgba(255,255,255,0.28)':'rgba(0,0,0,0.32)';
+
+  let peakActual=vmax;
+  M.forEach((m,i)=>{
+    for(let j=0;j<=500;j++){
+      const v=getV(i,j/500*Ts[i]);
+      if(v>peakActual) peakActual=v;
+    }
+  });
+  const vFloor=-0.04*peakActual;
+  const vCeil=peakActual*1.22;
+
+  function txV(t){return padV.l+t/Tmax*(Wv-padV.l-padV.r);}
+  function tyV(v){return padV.t+(Hv-padV.t-padV.b)*(1-(v-vFloor)/(vCeil-vFloor));}
+
+  c.strokeStyle=gc;c.lineWidth=0.5;
+  let step=0.1; if(vmax>1) step=0.25; if(vmax>2) step=0.5;
+  for(let v=0;v<=vCeil;v+=step){
+    gl(c,padV.l,tyV(v),Wv-padV.r,tyV(v));
+    c.fillStyle=tc;c.font='400 10px system-ui';c.textAlign='right';c.textBaseline='middle';
+    c.fillText(v.toFixed(2),padV.l-5,tyV(v));
+  }
+  const tSteps=[]; for(let t=0;t<=Tmax;t+=0.25) tSteps.push(Math.round(t*100)/100);
+  tSteps.forEach(ts=>{
+    if(ts>Tmax) return;
+    gl(c,txV(ts),padV.t,txV(ts),Hv-padV.b);
+    c.fillStyle=tc;c.font='400 10px system-ui';c.textAlign='center';c.textBaseline='top';
+    c.fillText(ts.toFixed(2)+'s',txV(ts),Hv-padV.b+5);
+  });
+
+  c.strokeStyle=dk?'rgba(255,255,255,0.22)':'rgba(0,0,0,0.18)';
+  c.lineWidth=1;c.setLineDash([6,4]);
+  gl(c,padV.l,tyV(vmax),Wv-padV.r,tyV(vmax));
+  c.setLineDash([]);
+  c.fillStyle=dk?'rgba(255,255,255,0.55)':'rgba(0,0,0,0.55)';
+  c.font='500 11px system-ui';c.textAlign='left';c.textBaseline='bottom';
+  c.fillText('v_max = '+vmax.toFixed(2),padV.l+4,tyV(vmax)-5);
+
+  M.forEach((m,i)=>{
+    const fillEnd=Math.min(curTime,Ts[i]);
+    if(fillEnd<=0) return;
+    c.globalAlpha=0.1;c.fillStyle=m.color;
+    c.beginPath();c.moveTo(txV(0),tyV(0));
+    for(let j=0;j<=400;j++){
+      const t=j/400*fillEnd;
+      c.lineTo(txV(t),tyV(getV(i,t)));
+    }
+    c.lineTo(txV(fillEnd),tyV(0));
+    c.closePath();c.fill();
+    c.globalAlpha=1;
+  });
+
+  M.forEach((m,i)=>{
+    c.strokeStyle=m.color;c.lineWidth=2.5;
+    c.beginPath();
+    for(let j=0;j<=500;j++){
+      const t=j/500*Ts[i];
+      const v=getV(i,t);
+      j===0?c.moveTo(txV(t),tyV(v)):c.lineTo(txV(t),tyV(v));
+    }
+    c.stroke();
+
+    c.setLineDash([3,4]);c.strokeStyle=m.color;c.lineWidth=0.8;c.globalAlpha=0.35;
+    gl(c,txV(Ts[i]),padV.t,txV(Ts[i]),Hv-padV.b);
+    c.setLineDash([]);c.globalAlpha=1;
+    c.fillStyle=m.color;c.font='500 10px system-ui';c.textAlign='center';c.textBaseline='top';
+    c.fillText('T='+Ts[i].toFixed(2)+'s',txV(Ts[i]),Hv-padV.b+16);
+  });
+
+  M.forEach((m,i)=>{
+    const pk=findActualPeak(i);
+    c.fillStyle=m.color;
+    c.beginPath();c.arc(txV(pk.t),tyV(pk.v),4.5,0,Math.PI*2);c.fill();
+    c.fillStyle=dk?'#1a1a18':'#fff';
+    c.beginPath();c.arc(txV(pk.t),tyV(pk.v),1.8,0,Math.PI*2);c.fill();
+    c.fillStyle=m.color;c.font='500 10px system-ui';
+    const offY=[-16,-4,8];
+    c.textAlign='center';c.textBaseline='bottom';
+    c.fillText(pk.v.toFixed(2),txV(pk.t),tyV(pk.v)+offY[i]);
+  });
+
+  if(curTime>0){
+    const cx=txV(curTime);
+    c.strokeStyle=dk?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.28)';
+    c.lineWidth=1.5;
+    gl(c,cx,padV.t,cx,Hv-padV.b);
+
+    const labels=[];
+    M.forEach((m,i)=>{
+      const v=getV(i,curTime);
+      const area=getS(i,curTime);
+      const cy=tyV(v);
+      c.fillStyle=m.color;
+      c.beginPath();c.arc(cx,cy,6,0,Math.PI*2);c.fill();
+      c.fillStyle=dk?'#1a1a18':'#fff';
+      c.beginPath();c.arc(cx,cy,2.2,0,Math.PI*2);c.fill();
+
+      let ly=cy-12;
+      labels.forEach(prev=>{if(Math.abs(ly-prev)<14) ly=prev-14;});
+      labels.push(ly);
+
+      c.fillStyle=m.color;c.font='500 10px system-ui';
+      c.textAlign=curTime/Tmax>0.6?'right':'left';
+      const lx=curTime/Tmax>0.6?cx-10:cx+10;
+      c.fillText('\u222B='+area.toFixed(3),lx,ly);
+    });
+  }
+
+  c.fillStyle=tc;c.font='400 10px system-ui';c.textAlign='center';
+  c.fillText('time (s)',Wv/2,Hv-2);
+  c.save();c.translate(10,(padV.t+Hv-padV.b)/2);c.rotate(-Math.PI/2);
+  c.fillText('velocity',0,0);c.restore();
+}
+
+function findActualPeak(i){
+  let mv=0,mt=0;
+  for(let j=0;j<=1000;j++){
+    const t=j/1000*Ts[i];
+    const v=getV(i,t);
+    if(v>mv){mv=v;mt=t;}
+  }
+  return {v:mv,t:mt};
+}
+
+function drawPos(){
+  const c=ctxP;
+  c.clearRect(0,0,Wp,Hp);
+  const gc=dk?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.04)';
+  const tc=dk?'rgba(255,255,255,0.28)':'rgba(0,0,0,0.32)';
+  const mn=-0.06*dist,mx=dist*1.18;
+
+  function txP(t){return padP.l+t/Tmax*(Wp-padP.l-padP.r);}
+  function tyP(s){return padP.t+(Hp-padP.t-padP.b)*(1-(s-mn)/(mx-mn));}
+
+  c.strokeStyle=gc;c.lineWidth=0.5;
+  let step=0.25; if(dist>1.5) step=0.5;
+  for(let s=0;s<=mx;s+=step){
+    gl(c,padP.l,tyP(s),Wp-padP.r,tyP(s));
+    c.fillStyle=tc;c.font='400 10px system-ui';c.textAlign='right';c.textBaseline='middle';
+    c.fillText(s.toFixed(2),padP.l-5,tyP(s));
+  }
+
+  c.strokeStyle=dk?'rgba(255,255,255,0.15)':'rgba(0,0,0,0.12)';
+  c.lineWidth=1;c.setLineDash([6,4]);
+  gl(c,padP.l,tyP(dist),Wp-padP.r,tyP(dist));
+  c.setLineDash([]);
+  c.fillStyle=dk?'rgba(255,255,255,0.45)':'rgba(0,0,0,0.5)';
+  c.font='500 10px system-ui';c.textAlign='left';c.textBaseline='bottom';
+  c.fillText('D = '+dist.toFixed(2),padP.l+4,tyP(dist)-4);
+
+  M.forEach((m,i)=>{
+    c.strokeStyle=m.color;c.lineWidth=2.2;
+    c.beginPath();
+    for(let j=0;j<=500;j++){
+      const t=j/500*Tmax;
+      j===0?c.moveTo(txP(t),tyP(getS(i,t))):c.lineTo(txP(t),tyP(getS(i,t)));
+    }
+    c.stroke();
+  });
+
+  if(curTime>0){
+    const cx=txP(curTime);
+    c.strokeStyle=dk?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.28)';
+    c.lineWidth=1.5;
+    gl(c,cx,padP.t,cx,Hp-padP.b);
+
+    const labels=[];
+    M.forEach((m,i)=>{
+      const s=getS(i,curTime);
+      const cy=tyP(s);
+      c.fillStyle=m.color;
+      c.beginPath();c.arc(cx,cy,5.5,0,Math.PI*2);c.fill();
+      c.fillStyle=dk?'#1a1a18':'#fff';
+      c.beginPath();c.arc(cx,cy,2,0,Math.PI*2);c.fill();
+
+      let ly=cy-10;
+      labels.forEach(prev=>{if(Math.abs(ly-prev)<13) ly=prev-13;});
+      labels.push(ly);
+
+      c.fillStyle=m.color;c.font='500 10px system-ui';
+      c.textAlign=curTime/Tmax>0.6?'right':'left';
+      const lx=curTime/Tmax>0.6?cx-8:cx+8;
+      c.fillText('s='+s.toFixed(3),lx,ly);
+    });
+  }
+
+  M.forEach((m,i)=>{
+    if(curTime>=Ts[i]){
+      const txPi=padP.l+Ts[i]/Tmax*(Wp-padP.l-padP.r);
+      c.fillStyle=m.color;c.globalAlpha=0.7;
+      c.font='500 10px system-ui';c.textAlign='center';c.textBaseline='bottom';
+      c.fillText('done',txPi,tyP(dist)-4);
+      c.globalAlpha=1;
+    }
+  });
+
+  c.fillStyle=tc;c.font='400 10px system-ui';c.textAlign='center';
+  c.fillText('time (s)',Wp/2,Hp-2);
+  c.save();c.translate(10,(padP.t+Hp-padP.b)/2);c.rotate(-Math.PI/2);
+  c.fillText('position (\u222Bv dt)',0,0);c.restore();
+}
+
+function drawAll(){drawVel();drawPos();updateMetrics();}
+
+function updateMetrics(){
+  const el=document.getElementById('metrics');
+  el.innerHTML='';
+  M.forEach((m,i)=>{
+    const s=getS(i,curTime),v=getV(i,curTime);
+    const pct=Math.min(s/dist*100,100);
+    const ratio=(Ts[i]/Ts[0]).toFixed(2);
+    const d=document.createElement('div');d.className='vm-mc';
+    d.innerHTML=`
+      <div class="vm-mc-h" style="color:${m.color}">${m.name}</div>
+      <div class="vm-mc-r">T_total<b>${Ts[i].toFixed(3)} s</b></div>
+      <div class="vm-mc-r">T / T_linear<b>${ratio}x</b></div>
+      <div class="vm-mc-r">v(now)<b>${v.toFixed(3)}</b></div>
+      <div class="vm-mc-r">s(now)<b>${s.toFixed(3)}</b></div>
+      <div class="vm-mc-r">Progress<b>${pct.toFixed(1)}%</b></div>
+      <div class="vm-mc-r">State<b>${curTime>=Ts[i]?'Done':'Moving'}</b></div>
+    `;
+    el.appendChild(d);
+  });
+}
+
+function setTime(t){
+  curTime=Math.max(0,Math.min(t,Tmax));
+  document.getElementById('sl-t').value=Math.round(curTime/Tmax*1000);
+  document.getElementById('v-t').textContent=curTime.toFixed(2)+' s';
+  const dc=Ts.filter(T=>curTime>=T).length;
+  const st=document.getElementById('status');
+  if(curTime<=0) st.textContent='Ready';
+  else if(dc===3) st.textContent='All finished';
+  else st.textContent=dc+'/3 finished';
+  drawAll();
+}
+
+function scrub(){setTime(parseInt(document.getElementById('sl-t').value)/1000*Tmax);}
+
+let startWall=0;
+function animLoop(ts){
+  if(!playing)return;
+  if(!startWall) startWall=ts-curTime*1000;
+  const t=(ts-startWall)/1000;
+  setTime(t);
+  if(t<Tmax) animFrame=requestAnimationFrame(animLoop);
+  else{playing=false;setTime(Tmax);}
+}
+function play(){
+  if(curTime>=Tmax*0.98) curTime=0;
+  playing=true;startWall=0;
+  animFrame=requestAnimationFrame(animLoop);
+}
+function pause(){playing=false;if(animFrame)cancelAnimationFrame(animFrame);}
+function reset(){pause();setTime(0);}
+
+window.addEventListener('resize',()=>{resizeAll();drawAll();});
+recompute();
+setTime(0);
+</script>

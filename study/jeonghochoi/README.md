@@ -40,7 +40,7 @@ colcon build --packages-select ros_tcp_endpoint
 
 ##### endpoint 노드 실행
 
-ros2 launch ros_tcp_endpoint endpoint.py 
+ros2 launch ros_tcp_endpoint endpoint.py
 
 #### ROSConnection 추가
 

@@ -1,0 +1,123 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reachy_mini"
+version = "1.2.4"
+authors = [{ name = "Pollen Robotics", email = "contact@pollen-robotics.com" }]
+description = ""
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=2.2.5",
+    "scipy>=1.15.3, <2.0.0",
+    "reachy_mini_motor_controller>=1.4.2",
+    "eclipse-zenoh~=1.7.0",
+    "opencv-python<=5.0",
+    "cv2_enumerate_cameras>=1.2.1",
+    "psutil",
+    "jinja2",
+    "uvicorn[standard]",
+    "fastapi",
+    "pyserial",
+    "huggingface-hub==0.34.4",
+    "sounddevice==0.5.1",
+    "soundfile==0.13.1",
+    "reachy-mini-rust-kinematics>=1.0.3",
+    "asgiref",
+    "aiohttp",
+    "log-throttling==0.0.3",
+    "pyusb>=1.2.1",
+    "libusb_package>=1.0.26.3",
+    "pip>=25",
+    "rich",
+    "questionary",
+    "websockets>=12,<16",
+    "toml",
+    "rustypot",
+    "numpy-stl>=3.2.0",
+    "trimesh>=4.11.0",
+    "gtts>=2.5.4",
+    "gradio-client>=2.0.3",
+    "python-dotenv>=1.1.1",
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "ruff==0.12.0",
+    "onshape-to-robot==1.7.6",
+    "mujoco==3.3.0",
+    "placo==0.9.14",
+    "pre-commit",
+    "mypy==1.18.2",
+    "rustypot>=1.4.0",
+    "types-requests",
+    "types-toml",
+    "rerun-sdk>=0.27.2",
+    "urdf-parser-py==0.0.4",
+]
+examples = ["pynput"]
+mujoco = ["mujoco==3.3.0"]
+nn_kinematics = ["onnxruntime==1.22.1"]
+placo_kinematics = ["placo==0.9.14"]
+gstreamer = ["PyGObject>=3.42.2,<=3.46.0", "gst-signalling>=1.1.2"]
+rerun = ["rerun-sdk>=0.27.2", "urdf-parser-py==0.0.4"]
+wireless-version = [
+    "semver>=3,<4",
+    "nmcli>=1.5",
+    "pollen_BMI088_imu_library",
+    "gpiozero>=2.0.0",
+    "lgpio>=0.2.2.0",
+]
+
+[project.scripts]
+reachy-mini-daemon = "reachy_mini.daemon.app.main:main"
+reachy-mini-app-assistant = "reachy_mini.apps.app:main"
+reachy-mini-reflash-motors = "reachy_mini.tools.reflash_motors:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+
+[tool.setuptools.package-data]
+reachy_mini = ["**/*"] # Inclut tous les fichiers non .py
+
+[tool.ruff]
+exclude = [
+    "src/reachy_mini/__init__.py",
+    "build/*",
+    "conftest.py",
+    "src/reachy_mini_dashboard/*",
+    "tests/*",
+]
+lint.extend-select = ["I", "D"]
+lint.ignore = [
+    "D203", # Incompatible with D211
+    "D213", # Incompatible with D212
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "audio: mark test as requiring audio hardware",
+    "audio_gstreamer: mark test as requiring GStreamer for audio",
+    "video: mark test as requiring video hardware",
+    "video_gstreamer: mark test as requiring GStreamer for video",
+    "wireless: mark test as requiring wireless Reachy Mini",
+    "wireless_gstreamer: mark test as requiring GStreamer for wireless Reachy Mini",
+]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src/"]
+ignore_missing_imports = true
+strict = true

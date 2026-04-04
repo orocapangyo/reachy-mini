@@ -114,7 +114,8 @@ class ReachyMini:
         The client is disconnected explicitly to avoid a thread pending issue.
 
         """
-        self.client.disconnect()
+        if hasattr(self, "client"):
+            self.client.disconnect()
 
     def __enter__(self) -> "ReachyMini":
         """Context manager entry point for Reachy Mini."""
@@ -134,27 +135,36 @@ class ReachyMini:
         self, media_backend: str, log_level: str
     ) -> MediaManager:
         mbackend = MediaBackend.DEFAULT
-        match media_backend.lower():
-            case "webrtc":
-                if self.client.get_status()["wireless_version"]:
-                    mbackend = MediaBackend.WEBRTC
-                else:
-                    self.logger.warning(
-                        "Non-wireless version detected, daemon should use the flag '--wireless-version'. Reverting to default"
-                    )
+        daemon_status = self.client.get_status()
+
+        # If wireless, force webrtc unless no_media is selected
+        if media_backend != "no_media" and daemon_status.get(
+            "wireless_version"
+        ):
+            mbackend = MediaBackend.WEBRTC
+        else:
+            match media_backend.lower():
+                case "webrtc":
+                    if not daemon_status.get("wireless_version"):
+                        self.logger.warning(
+                            "Non-wireless version detected, daemon should use the flag '--wireless-version'. Reverting to default"
+                        )
+                        mbackend = MediaBackend.DEFAULT
+                    else:
+                        self.logger.info("WebRTC backend configured successfully.")
+                        mbackend = MediaBackend.WEBRTC
+                case "gstreamer":
+                    mbackend = MediaBackend.GSTREAMER
+                case "default":
                     mbackend = MediaBackend.DEFAULT
-            case "gstreamer":
-                mbackend = MediaBackend.GSTREAMER
-            case "default":
-                mbackend = MediaBackend.DEFAULT
-            case "no_media":
-                mbackend = MediaBackend.NO_MEDIA
-            case "default_no_video":
-                mbackend = MediaBackend.DEFAULT_NO_VIDEO
-            case _:
-                raise ValueError(
-                    f"Invalid media_backend '{media_backend}'. Supported values are 'default', 'gstreamer', 'no_media', 'default_no_video', and 'webrtc'."
-                )
+                case "no_media":
+                    mbackend = MediaBackend.NO_MEDIA
+                case "default_no_video":
+                    mbackend = MediaBackend.DEFAULT_NO_VIDEO
+                case _:
+                    raise ValueError(
+                        f"Invalid media_backend '{media_backend}'. Supported values are 'default', 'gstreamer', 'no_media', 'default_no_video', and 'webrtc'."
+                    )
 
         return MediaManager(
             use_sim=self.client.get_status()["simulation_enabled"],
@@ -695,6 +705,7 @@ class ReachyMini:
         move: Move,
         play_frequency: float = 100.0,
         initial_goto_duration: float = 0.0,
+        sound: bool = True,
     ) -> None:
         """Asynchronously play a Move.
 
@@ -702,6 +713,7 @@ class ReachyMini:
             move (Move): The Move object to be played.
             play_frequency (float): The frequency at which to evaluate the move (in Hz).
             initial_goto_duration (float): Duration for the initial goto to the starting position of the move (in seconds). If 0, no initial goto is performed.
+            sound (bool): If True, play the sound associated with the move (if any).
 
         """
         if initial_goto_duration > 0.0:
@@ -716,6 +728,9 @@ class ReachyMini:
             )
 
         sleep_period = 1.0 / play_frequency
+
+        if move.sound_path is not None and sound:
+            self.media_manager.play_sound(str(move.sound_path))
 
         t0 = time.time()
         while time.time() - t0 < move.duration:

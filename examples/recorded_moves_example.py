@@ -16,7 +16,11 @@ def main(dataset_path: str) -> None:
     recorded_moves = RecordedMoves(dataset_path)
 
     print("Connecting to Reachy Mini...")
+<<<<<<< HEAD
     with ReachyMini(use_sim=False, media_backend="no_media") as reachy:
+=======
+    with ReachyMini() as reachy:
+>>>>>>> upstream/main
         print("Connection successful! Starting dance sequence...\n")
         try:
             while True:

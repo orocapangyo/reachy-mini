@@ -24,6 +24,16 @@ graph TB
     E --> F[MuJoCo 시뮬레이션]
 ```
 
+### 1.1 Hugging Face란?
+
+Hugging Face는 '인공지능계의 GitHub' 또는 **'AI 모델의 앱스토어'**라고 생각하면 쉽습니다. 복잡한 수학 공식이나 프로그래밍 원리를 깊게 몰라도, 전문가들이 이미 만들어 둔 고성능 AI를 가져와 바로 사용할 수 있게 해주는 플랫폼입니다.
+
+- **쉽게 이해하기**:
+    - **사전 학습된 모델(Pre-trained Model)**: 이미 엄청난 양의 데이터를 공부해서 똑똑해진 '졸업생 AI'입니다. 우리는 이 AI를 데려와서 필요한 일만 시키면 됩니다.
+    - **Model Hub**: 스마트폰의 앱스토어처럼, 원하는 기능(얼굴 인식, 번역 등)을 가진 AI를 검색해서 고르는 곳입니다.
+    - **Transformers 라이브러리**: AI 모델을 내 컴퓨터로 안전하고 빠르게 옮겨와서 실행해 주는 '배달 및 설치 기사' 역할을 합니다.
+    - **Spaces**: AI가 실제로 어떻게 작동하는지 웹사이트에서 직접 버튼을 눌러보며 테스트할 수 있는 '체험존'입니다.
+
 ---
 
 ## 2. 환경 설정
@@ -100,7 +110,13 @@ for result in results:
 
 #### B. 음성 출력(TTS) 및 자동 재생 (Spaces 활용)
 
-가장 안정적인 무료 고품질 TTS를 위해 Hugging Face Spaces의 `MeloTTS` 모델을 **Gradio Client**를 통해 활용합니다. 또한 `sounddevice`를 사용해 즉시 재생하는 기능을 포함합니다.
+가장 안정적인 무료 고품질 TTS를 위해 Hugging Face Spaces의 `MeloTTS` 모델을 **Gradio Client**를 통해 활용합니다. 
+
+> **💡 초보자를 위한 작동 원리**
+> 1. **입력**: 로봇이 하고 싶은 말을 글자(Text)로 적습니다.
+> 2. **전달**: 'Gradio Client'라는 통로를 통해 인터넷 너머에 있는 AI에게 글자를 보냅니다.
+> 3. **변환**: 인터넷 너머의 강력한 서버(Spaces)에서 AI 모델이 글자를 읽어 음성 파일로 만듭니다.
+> 4. **재생**: 내 컴퓨터가 그 파일을 받아 스피커로 들려줍니다. (내 컴퓨터 성능이 낮아도 똑똑한 AI 목소리를 낼 수 있는 비결입니다!)
 
 ```python
 import os
@@ -169,7 +185,7 @@ if __name__ == "__main__":
 4.  **Prediction Heads**: 각 쿼리에 대해 물체의 클래스와 위치(Bounding Box)를 예측합니다.
 5.  **Bipartite Matching Loss**: 예측된 결과와 실제 정답(Ground Truth) 사이의 중복 없는 일대일 매칭을 수행하여 NMS 없이도 중복된 탐지를 방지합니다.
 
-### 3.1 기본 추론 코드
+### 3.2 기본 추론 코드
 
 ```python
 import torch
@@ -232,7 +248,7 @@ cv2.destroyAllWindows()
 -   **Open-World**: "bottle", "cup"처럼 미리 정의된 클래스뿐만 아니라 "a person wearing a red shirt"와 같이 구체적인 묘사로도 물체를 찾을 수 있습니다.
 -   **ViT Backbone**: Vision Transformer 아키텍처를 사용하여 이미지의 글로벌한 관계를 잘 파악합니다.
 
-### 4.1 특정 물체 추적 및 시뮬레이션 연동
+### 4.2 특정 물체 추적 및 시뮬레이션 연동
 
 ```python
 from transformers import Owlv2Processor, Owlv2ForObjectDetection
@@ -346,6 +362,16 @@ OWL-ViT 모델을 설정하고, "a red apple"이라는 텍스트 쿼리를 통�
 - [Hugging Face Vision Guide](https://huggingface.co/docs/transformers/tasks/object_detection)
 - [OWL-ViT Documentation](https://huggingface.co/docs/transformers/model_doc/owlvit)
 - [PyTorch CUDA Guide](https://pytorch.org/docs/stable/notes/cuda.html)
+
+---
+
+## 9. 학습 마무리
+
+이번 주차에서는 Hugging Face를 활용하여 로봇의 '눈(Vision)'과 '입(TTS)'을 업그레이드했습니다.
+
+- **이론 요약**: 트랜스포머 아키텍처가 비전 분야(DETR)와 제로샷 학습(OWL-ViT)에 어떻게 적용되는지 이해했습니다.
+- **실습 핵심**: 복잡한 전처리 과정 없이 `transformers` 라이브러리를 통해 최신 모델을 로드하고, 이를 Reachy Mini의 `look_at` 함수와 결합하여 실시간 추적 기능을 구현했습니다.
+- **향후 과제**: 탐지된 물체의 좌표를 시뮬레이션 좌표계로 더 정밀하게 변환하는 방법과, 다양한 물체에 따라 로봇이 다른 반응을 보이도록 프로그래밍해 보세요.
 
 ---
 

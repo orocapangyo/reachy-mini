@@ -1,13 +1,17 @@
+import os
+import sys
 import numpy as np
 import time
-from faster_whisper import WhisperModel
+import torch
+import whisper
 from reachy_mini import ReachyMini
 
-# 1. Faster-Whisper 모델 초기화 (초기 구동 시 다운로드로 인해 수 초 소요)
-# 로봇의 실시간 성능을 위해 가장 가볍고 빠른 'tiny' 모델을 사용합니다.
-print("AI 음성인식 모델 로딩 중...")
-model = WhisperModel("tiny", device="cpu", compute_type="int8") 
-print("모델 로딩 완료!")
+# 1. 오리지널 OpenAI Whisper 모델 로드
+# 실습 환경(CPU)에서의 실시간 성능을 위해 가장 가볍고 빠른 'tiny' 모델을 사용합니다.
+print("OpenAI Whisper 모델 로딩 중... (최초 구동 시 시간이 걸릴 수 있습니다)")
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model = whisper.load_model("tiny", device=device)
+print(f"모델 로딩 완료! (사용 장치: {device})")
 
 def listen_command_whisper(mini):
     print("\n[듣는 중...] 마이크에 대고 말씀하세요 (3초)")
@@ -20,41 +24,49 @@ def listen_command_whisper(mini):
             audio_buffer.append(sample)
             
     if not audio_buffer:
-        print("[주의]: 마이크 데이터가 없습니다.")
+        print("[주의]: 마이크 데이터가 수집되지 않았습니다.")
         return None
 
-    # 2. 오디오 조각 결합 및 정규화
+    # 2. 오디오 조각 결합 및 오리지널 Whisper 규격 맞추기
     audio_raw = np.concatenate(audio_buffer)
     
-    # Whisper는 16-bit 정수형(int16) 데이터를 -1.0 ~ 1.0 사이의 32-bit 부동소수점(float32)으로 변환해야 합니다.
+    # 정규화: int16 데이터를 float32 범위(-1.0 ~ 1.0)로 변환
     audio_data = audio_raw.astype(np.float32) / 32768.0
     
-    # Reachy Mini의 기본 마이크는 2채널(스테레오)이므로, Whisper 입력을 위해 1채널(모노)로 평균을 냅니다.
+    # 채널 변환: Reachy Mini의 스테레오(2채널) 데이터를 모노(1채널)로 평균내기
     if len(audio_data.shape) > 1 and audio_data.shape[1] == 2:
         audio_data = np.mean(audio_data, axis=1)
 
     try:
-        # 3. 최신 AI 모델을 통한 음성 인식 수행
-        # beam_size=1은 속도를 최우선으로 할 때 사용합니다.
-        segments, info = model.transcribe(audio_data, beam_size=1, language="ko")
+        # 3. Whisper 모델로 음성 인식 수행
+        # 오리지널 whisper.transcribe() 함수는 내부적으로 데이터를 PyTorch 텐서로 변환하여 처리합니다.
+        print("[AI 분석 중...]")
+        result = model.transcribe(audio_data, language="ko", fp16=False)
         
-        # 인식된 텍스트 합치기
-        text = "".join([segment.text for segment in segments]).strip()
+        text = result["text"].strip()
         print(f"[인식 결과 (Whisper)]: {text}")
         return text
     except Exception as e:
         print(f"[인식 에러]: {e}")
         return None
 
-# 실행 테스트
+# 실행부
 try:
     with ReachyMini() as mini:
         mini.wake_up()
+        print("로봇이 준비되었습니다.")
+        
         while True:
             command = listen_command_whisper(mini)
-            if command and "안녕" in command:
-                print("로봇이 인사를 감지했습니다!")
-                # 여기에 로봇 동작 제어 코드 추가 (예: mini.look_at_image)
-            time.sleep(0.5)
+            if command:
+                if "안녕" in command:
+                    print("=> 로봇 동작: 반갑게 인사하기")
+                    mini.look_at_image(320, 100, 0.5)  # 고개 들기
+                    time.sleep(0.5)
+                    mini.look_at_image(320, 240, 0.5)  # 정면
+                elif "종료" in command:
+                    print("실습을 종료합니다.")
+                    break
+            time.sleep(0.1)
 except KeyboardInterrupt:
-    print("종료합니다.")
+    print("사용자에 의해 종료되었습니다.")

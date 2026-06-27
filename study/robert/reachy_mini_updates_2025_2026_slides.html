@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reachy Mini Submodule Updates (2025 - 2026) - Slides</title>
+
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+
+  <!-- Prism JS for Code Highlighting -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+  <!-- Mermaid JS for Diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      securityLevel: 'loose',
+      flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
+    });
+  </script>
+
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --slide-bg: #111827;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --primary: #3b82f6;
+      --primary-glow: rgba(59, 130, 246, 0.4);
+      --accent: #10b981;
+      --accent-glow: rgba(16, 185, 129, 0.3);
+      --border-color: #1f2937;
+      --font-title: 'Inter', 'Noto Sans KR', sans-serif;
+      --font-body: 'Inter', 'Noto Sans KR', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Slides Container */
+    #deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .slide {
+      position: absolute;
+      width: 90vw;
+      height: 80vh;
+      max-width: 1200px;
+      max-height: 800px;
+      background: var(--slide-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(100px) scale(0.95);
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(59, 130, 246, 0.1);
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0) scale(1);
+    }
+
+    .slide.prev {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(-100px) scale(0.95);
+    }
+
+    /* Slide Header */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 16px;
+    }
+
+    .slide-tag {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      background: rgba(16, 185, 129, 0.1);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .slide-time {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Content Typography */
+    h1 {
+      font-family: var(--font-title);
+      font-weight: 800;
+      font-size: 3rem;
+      line-height: 1.2;
+      background: linear-gradient(135deg, #fff 0%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 2.2rem;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+
+    p, li {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      color: var(--text-main);
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 12px;
+    }
+
+    li strong {
+      color: #fff;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 1rem;
+    }
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 10px 14px;
+      text-align: left;
+    }
+    th {
+      background: rgba(59, 130, 246, 0.15);
+      color: #fff;
+      font-weight: 600;
+    }
+    tbody tr:nth-child(even) {
+      background: rgba(255,255,255,0.02);
+    }
+    td strong { color: #fff; }
+
+    /* Code styling */
+    pre {
+      background: #0d1117 !important;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      padding: 16px !important;
+      margin: 16px 0;
+      overflow-x: auto;
+      max-height: 300px;
+    }
+
+    code {
+      font-family: var(--font-mono) !important;
+      font-size: 0.95rem !important;
+    }
+
+    /* Layout Utilities */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .flex-center {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      text-align: center;
+    }
+
+    /* Highlights & Cards */
+    .card {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 10px 20px -10px var(--primary-glow);
+    }
+
+    .card-title {
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Alert Box styles */
+    .alert {
+      padding: 16px;
+      border-radius: 8px;
+      margin: 16px 0;
+      border-left: 4px solid;
+    }
+    .alert.important {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444;
+    }
+    .alert.tip {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: #10b981;
+    }
+    .alert.note {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: var(--primary);
+    }
+    .alert-important-title {
+      color: #ef4444;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .alert-tip-title {
+      color: #10b981;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .alert-note-title {
+      color: #93c5fd;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    /* Controls & Navigation */
+    #controls {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .btn {
+      background: rgba(31, 41, 55, 0.8);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .btn:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 0 15px var(--primary-glow);
+      color: #ffffff;
+    }
+
+    #progress-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 6px;
+      background: rgba(31, 41, 55, 0.5);
+      z-index: 99;
+    }
+
+    #progress-bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      transition: width 0.3s ease;
+    }
+
+
+    /* Speaker Notes Panel */
+    #notes-panel {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80vw;
+      max-width: 800px;
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid var(--primary);
+      border-radius: 12px;
+      padding: 20px;
+      display: none;
+      z-index: 101;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      backdrop-filter: blur(12px);
+    }
+
+    #notes-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    #notes-content {
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #d1d5db;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Custom Title Slide styling */
+    .title-slide {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .title-slide::before {
+      content: '';
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: var(--primary);
+      filter: blur(120px);
+      border-radius: 50%;
+      top: -50px;
+      left: -50px;
+      opacity: 0.15;
+    }
+
+    .title-slide::after {
+      content: '';
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: var(--accent);
+      filter: blur(120px);
+      border-radius: 50%;
+      bottom: -50px;
+      right: -50px;
+      opacity: 0.15;
+    }
+
+    .meta-info {
+      margin-top: 48px;
+      display: flex;
+      gap: 24px;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .meta-info span strong {
+      color: #fff;
+    }
+
+    /* Mermaid Slide Customizing */
+    .mermaid-container {
+      background: rgba(13, 17, 23, 0.6);
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 12px 0;
+      overflow: auto;
+    }
+
+    .mermaid svg {
+      height: 100%;
+      max-height: 280px;
+    }
+  </style>
+</head>
+<body>
+
+
+  <!-- Slides Deck -->
+  <div id="deck">
+
+    <!-- SLIDE 1 : Title -->
+    <div class="slide title-slide active" data-notes="안녕하십니까. 최근 1년(2025.06~2026.06) 동안 Reachy Mini 오픈소스 서브모듈에 적용된 핵심 변경 사항과, 그 바탕이 되는 하드웨어·기구 구성을 함께 정리한 자료입니다. 하드웨어 구성, 미디어 백엔드, 모터 제어 안정성, 멀티 OS 지원의 네 축으로 살펴봅니다.">
+      <div class="flex-center">
+        <span class="slide-tag" style="margin-bottom: 24px;">Submodule Updates &amp; Hardware</span>
+        <h1 style="font-size: 3.5rem; margin-bottom: 12px;">Reachy Mini Updates</h1>
+        <h2 style="font-size: 1.8rem; font-weight: 400; color: var(--text-muted); margin-bottom: 24px;">2025 - 2026 주요 변경 사항 &amp; 하드웨어 구성 정리</h2>
+
+        <div class="meta-info">
+          <span>기간: <strong>2025.06 - 2026.06</strong></span>
+          <span>작성: <strong>robertchoi</strong></span>
+          <span>대상: <strong>reachy_mini 서브모듈</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2 : Overview -->
+    <div class="slide" data-notes="오늘 다룰 다섯 가지 축입니다. 먼저 로봇의 하드웨어·기구 설계를 짚고, 그 위에서 동작하는 소프트웨어 변경(미디어, 모터 제어, 멀티 OS)을 본 뒤 종합 요약으로 마무리합니다.">
+      <div class="slide-header">
+        <h2>전체 개요</h2>
+        <span class="slide-tag">Contents</span>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="card">
+            <div class="card-title"><span style="color: var(--primary);">01</span> 하드웨어 구성 &amp; 기구 설계</div>
+            <p>9 DOF·스튜어트 플랫폼, Dynamixel 구동계, 전장/센서, 공개 CAD(URDF/MJCF)</p>
+          </div>
+          <div class="card">
+            <div class="card-title"><span style="color: var(--primary);">02</span> 미디어 백엔드 대전환</div>
+            <p>GStreamer 기본 도입, WebRTC 양방향 오디오 및 레이텐시 대폭 단축</p>
+          </div>
+          <div class="card">
+            <div class="card-title"><span style="color: var(--primary);">03</span> 하드웨어 안정성 &amp; 모터 제어</div>
+            <p>조건부 플래싱, 안전 토크 홀드, 과전류 보호, scan_motors CLI</p>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-title"><span style="color: var(--primary);">04</span> 멀티 OS &amp; 개발 도구</div>
+            <p>Windows 풀 체인 지원, App Assistant 대화형 템플릿, venv UI 리셋</p>
+          </div>
+          <div class="card">
+            <div class="card-title"><span style="color: var(--primary);">05</span> 핵심 요약</div>
+            <p>검증된 기구 플랫폼 · 저지연 · 내구성 · 크로스 플랫폼 개발</p>
+          </div>
+          <div class="alert note">
+            <div class="alert-note-title">ℹ️ 오픈소스 하드웨어</div>
+            기구 형상(STL+URDF/MJCF), 부품 사양, 자유도/치수, 기구학 알고리즘, 조립 가이드가 모두 공개되어 있습니다.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3 : HW overview & DOF -->
+    <div class="slide" data-notes="Reachy Mini는 데스크톱 크기 안에 머리 6자유도(스튜어트 플랫폼), 몸통 회전 1, 안테나 2로 총 9 자유도를 집약한 표현형 로봇입니다. Wireless는 온보드 CM4와 배터리로 독립 구동, Lite는 USB-C로 PC에 연결됩니다.">
+      <div class="slide-header">
+        <span class="slide-tag">01. 하드웨어</span>
+        <span class="slide-time">외형 · 자유도</span>
+      </div>
+      <h2>외형 사양 및 자유도(DOF) 구성</h2>
+      <div class="grid-2" style="margin-top: 16px;">
+        <div>
+          <table>
+            <thead><tr><th>항목</th><th>Wireless</th><th>Lite</th></tr></thead>
+            <tbody>
+              <tr><td>크기(확장)</td><td>30×20×15.5cm</td><td>동일</td></tr>
+              <tr><td>질량</td><td>1.475 kg</td><td>1.350 kg</td></tr>
+              <tr><td>재질</td><td colspan="2">ABS·PC·알루미늄·스틸</td></tr>
+              <tr><td>제어 본체</td><td>온보드 CM4</td><td>외부 PC(USB-C)</td></tr>
+              <tr><td>전원</td><td colspan="2">6.8 – 7.6 V</td></tr>
+              <tr><td>배터리</td><td>LiFePO4 12.8Wh</td><td>없음</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-title">🤖 총 9 자유도</div>
+            <ul style="margin-bottom:0;">
+              <li><strong>머리 6 DOF</strong> — 3축 회전 + 3축 병진(스튜어트 플랫폼)</li>
+              <li><strong>몸통 1 DOF</strong> — 수직축(yaw) 회전</li>
+              <li><strong>안테나 2 DOF</strong> — 좌/우 각 1축, 감정·상태 표현</li>
+            </ul>
+          </div>
+          <div class="alert note">
+            <div class="alert-note-title">ℹ️ 두 모델 차이</div>
+            기구·모터·센서는 동일. <strong>연산 주체</strong>(온보드 vs 외부 PC)와 <strong>배터리 내장 여부</strong>에서만 갈립니다.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4 : Stewart platform & kinematics -->
+    <div class="slide" data-notes="머리는 6개의 선형 링크가 상·하 플레이트를 잇는 스튜어트 플랫폼 구조입니다. 6개 모터가 암을 돌리고 로드가 볼조인트로 머리를 밀고 당겨 6자유도를 만듭니다. 역기구학은 해석적, 순기구학은 뉴턴법 수치해석이며 핵심 계산은 Rust로 구현돼 있습니다.">
+      <div class="slide-header">
+        <span class="slide-tag">01. 하드웨어</span>
+        <span class="slide-time">머리 메커니즘</span>
+      </div>
+      <h2>스튜어트 플랫폼(6-DOF 병렬) &amp; 기구학</h2>
+      <div class="grid-2" style="margin-top: 16px;">
+        <div>
+          <ul style="font-size:1.05rem; line-height:1.7;">
+            <li><strong>구조</strong>: 베이스의 6개 모터 → 암(arm) 회전 → 로드(rod) → 볼조인트 → 상단 머리. 6링크 길이 조합으로 6자유도 결정</li>
+            <li><strong>기구 파라미터</strong>: <code>motor_arm_length</code>, <code>rod_length</code>, 모터 배치, <code>head_z_offset</code> (<code>kinematics_data.json</code>)</li>
+            <li><strong>장점</strong>: 병렬 구조라 고강성·하중 분산 → 작은 모터로 정밀 제어</li>
+          </ul>
+          <div class="card">
+            <div class="card-title">🧮 3종 기구학 엔진</div>
+            <p style="font-size:0.98rem;">해석적 IK + 뉴턴법 FK(Rust 바인딩) · Placo 최적화 · 신경망 근사. <code>automatic_body_yaw</code>로 몸통이 회전 범위를 보완.</p>
+          </div>
+        </div>
+        <div class="mermaid-container">
+          <div class="mermaid">
+            graph TD
+              M[6x 모터 / 암] --> R[로드 + 볼조인트]
+              R --> H[상단 플랫폼 = 머리]
+              H --> P["6-DOF 자세<br/>(회전3 + 병진3)"]
+              B[몸통 yaw 1-DOF] --> P
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5 : Motors & power -->
+    <div class="slide" data-notes="구동계는 전부 Dynamixel 스마트 서보이며 TTL 데이지체인으로 연결됩니다. 베이스 1개, 안테나 2개, 스튜어트 플랫폼 6개로 총 9개입니다. 전원은 LiFePO4 배터리와 CM4 컨트롤러 보드로 구성됩니다.">
+      <div class="slide-header">
+        <span class="slide-tag">01. 하드웨어</span>
+        <span class="slide-time">구동계 · 전장</span>
+      </div>
+      <h2>구동계(모터) 및 전장/전원</h2>
+      <div class="grid-2" style="margin-top: 16px;">
+        <div>
+          <table>
+            <thead><tr><th>부위</th><th>모터</th><th>수량</th></tr></thead>
+            <tbody>
+              <tr><td>몸통 베이스</td><td>XC330-M288-PG</td><td>1</td></tr>
+              <tr><td>안테나</td><td>XL330-M077-T</td><td>2</td></tr>
+              <tr><td>스튜어트</td><td>XL330-M288-T</td><td>6</td></tr>
+            </tbody>
+          </table>
+          <div class="alert note">
+            <div class="alert-note-title">ℹ️ TTL 데이지체인</div>
+            한 버스에 직렬 연결 → 모터 ID/연결 점검이 중요. (<code>scan_motors</code> CLI로 진단)
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-title">🔋 파워 보드</div>
+            <p style="font-size:0.98rem;">입력 6.8–7.6V. (Wireless) LiFePO4 2000mAh / 6.4V / 12.8Wh — 과충전·과방전·과전류·단락 보호 + 온도 센서.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">🧠 컨트롤러 보드</div>
+            <p style="font-size:0.98rem;"><strong>Wireless</strong>: Raspberry Pi CM4104016(WiFi, 4GB/16GB), TTL·CSI·마이크·USB-C 통합. <br/><strong>Lite</strong>: USB-C 입력으로 외부 PC 연결.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6 : Sensors & digital assets -->
+    <div class="slide" data-notes="센서는 광각 카메라(IMX708 12MP), 4-MEMS 마이크 어레이(reSpeaker XVF3800), 5W 스피커로 구성됩니다. 무엇보다 전체 로봇 모델이 URDF/MJCF와 STL 150여 종으로 공개돼 있고, OnShape 원본 CAD 링크까지 제공됩니다.">
+      <div class="slide-header">
+        <span class="slide-tag">01. 하드웨어</span>
+        <span class="slide-time">센서 · 공개 CAD</span>
+      </div>
+      <h2>센서 구성 &amp; 디지털 기구 자산</h2>
+      <div class="grid-2" style="margin-top: 16px;">
+        <div>
+          <div class="card">
+            <div class="card-title">🎥 카메라</div>
+            <p style="font-size:0.98rem;">RPi Camera v3 광각 — Sony IMX708, 12MP, 120°, 오토포커스(CSI).</p>
+          </div>
+          <div class="card">
+            <div class="card-title">🎙️ 마이크 어레이 · 스피커</div>
+            <p style="font-size:0.98rem;">PDM MEMS 4개 (16kHz / -26dBFS / 64dBA SNR), reSpeaker XMOS XVF3800 → DoA·빔포밍. 스피커 5W@4Ω.</p>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-title">📦 공개 CAD / 모델</div>
+            <ul style="margin-bottom:0; font-size:0.98rem;">
+              <li><strong>URDF / MJCF</strong> 전체 로봇 모델 (충돌 메시 coarse/fine 2단계)</li>
+              <li><strong>STL 150여 종</strong> — 3D 프린트 부품(<code>*_3dprint.stl</code>)/구매 부품 구분</li>
+              <li><strong>OnShape 원본 CAD</strong> 링크 공개(<code>mjcf/config.json</code>)</li>
+              <li>world/head <strong>좌표계</strong> 정의 → 머리 자세를 4×4 행렬(SE(3))로 지정</li>
+            </ul>
+          </div>
+          <p style="font-size:0.9rem; color:var(--text-muted);">소스: <code>src/reachy_mini/descriptions</code> · <code>docs/.../hardware.md</code></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7 : GStreamer -->
+    <div class="slide" data-notes="여기서부터 소프트웨어 변경입니다. 첫째는 미디어 파이프라인 개편. 기본 백엔드를 GStreamer로 전환해 OS별 하드웨어 가속을 활용하고, 디바이스 환경에 따라 호환성 모드로 즉시 동작하도록 데몬 실행 인자를 대거 튜닝했습니다.">
+      <div class="slide-header">
+        <span class="slide-tag">02. 미디어 백엔드</span>
+        <span class="slide-time">GStreamer</span>
+      </div>
+      <h2>GStreamer 표준 백엔드 도입</h2>
+      <div style="margin-top: 24px;">
+        <ul style="font-size: 1.15rem; line-height: 1.8;">
+          <li><strong>기존 한계</strong>: 미디어 처리 백엔드가 네트워크·클라이언트 OS에 따라 잦은 끊김과 높은 자원 점유율</li>
+          <li><strong>GStreamer 채택</strong>: 기본값을 GStreamer로 전환 → OS별 하드웨어 가속(인코딩/디코딩) 활용</li>
+          <li><strong>구조 표준화</strong>: 디바이스 소스(카메라/마이크)→네트워크 송출을 엘리먼트 그래프로 일원화 → 교체·디버깅·확장 용이</li>
+        </ul>
+        <div class="alert tip" style="margin-top: 24px;">
+          <div class="alert-tip-title">💡 호환성 모드 튜닝</div>
+          대시보드 앱 실행 시 디바이스·환경에 따라 미디어 백엔드가 즉시 호환성 모드로 동작하도록 데몬 내부 실행 인자가 대거 튜닝되었습니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8 : WebRTC -->
+    <div class="slide" data-notes="이번 업데이트의 백미는 WebRTC 양방향 오디오입니다. 로봇 스피커 출력과 마이크 입력을 동시에 처리하고, 버퍼 복사를 제거하고 Opus 인코더를 최적화했으며, 비동기 통신을 별도 스레드 풀에서 돌려 제어 루프 차단을 막았습니다.">
+      <div class="slide-header">
+        <span class="slide-tag">02. 미디어 백엔드</span>
+        <span class="slide-time">WebRTC 양방향</span>
+      </div>
+      <h2>WebRTC 양방향 오디오 &amp; 레이텐시 최적화</h2>
+      <div class="grid-2" style="margin-top: 16px;">
+        <div>
+          <ul style="font-size: 1.05rem; line-height: 1.7;">
+            <li><strong>양방향 실시간 오디오</strong>: 로봇 스피커 출력 + 마이크 입력 동시 송수신 → 대화형 앱 기반</li>
+            <li><strong>버퍼 복사 제거</strong>: 불필요한 Buffer Copy 생략 → 메모리·CPU 부담 감소(CM4에 특히 효과)</li>
+            <li><strong>Opus 인코더 최적화</strong>: 무선 시 소리 밀림 최소화</li>
+            <li><strong>스레드 풀 도입</strong>: 비동기 통신 중에도 제어 루프 비차단</li>
+          </ul>
+        </div>
+        <div>
+          <pre><code class="language-python"># WebRTC 오디오 백엔드
+# 비동기 통신을 별도 스레드 풀에서 구동
+def start_webrtc_loop():
+    loop = asyncio.new_event_loop()
+    t = Thread(target=loop.run_forever)
+    t.start()
+    # 양방향 오디오 파이프라인 등록
+    # (제로카피 버퍼 전달)</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 9 : Audio device sharing & DoA -->
+    <div class="slide" data-notes="디바이스 접근성도 개선했습니다. PipeWire로 유도해 데몬과 사용자 앱이 같은 카메라·마이크를 동시에 쓰도록 했고, 구형 PulseAudio 환경에서도 에러 없이 폴백되며, 무선 모드에서 음원 방향 추적(DoA)을 강화했습니다.">
+      <div class="slide-header">
+        <span class="slide-tag">02. 미디어 백엔드</span>
+        <span class="slide-time">디바이스 공유 · DoA</span>
+      </div>
+      <h2>오디오 장치 디텍션 &amp; 디바이스 공유</h2>
+      <div style="margin-top: 24px;">
+        <div class="card">
+          <div class="card-title">🎥 PipeWire 기반 디바이스 공유</div>
+          <p>카메라·마이크 스트림을 PipeWire 환경으로 유도하여, 로봇 제어 데몬과 사용자 앱이 <strong>동시에 같은 입력 장치에 접근</strong>하도록 설계(독점 방지).</p>
+        </div>
+        <div class="card">
+          <div class="card-title">🎙️ PulseAudio 폴백 확장</div>
+          <p>비-PipeWire(일반 PulseAudio) 구형 배포판에서도 오디오 디렉팅이 에러 없이 폴백되도록 탐지 로직 최적화.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">📍 Sound DoA 무선 지원</div>
+          <p>reSpeaker 마이크 어레이 카드 번호를 인식해 소리 방향을 식별하고 머리를 돌리는 DoA의 무선 모드 지원 강화.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 10 : Reflash logic -->
+    <div class="slide" data-notes="둘째 축은 모터 제어 안정성입니다. 가장 비효율적이던 부팅 시 무조건 플래싱을 제거했습니다. 이제 파라미터를 먼저 스캔해 불일치하는 모터만 부분 플래싱하므로 30초 이상 걸리던 기동이 약 1초로 줄고 EEPROM 수명도 늘었습니다.">
+      <div class="slide-header">
+        <span class="slide-tag">03. 하드웨어/모터</span>
+        <span class="slide-time">플래싱 로직</span>
+      </div>
+      <h2>부팅 시 조건부 플래싱으로 수명 연장</h2>
+      <div class="grid-2" style="margin-top: 24px;">
+        <div>
+          <ul style="font-size: 1.1rem; line-height: 1.8;">
+            <li><strong>기존 고질병</strong>: 기동 시마다 전체 모터 펌웨어를 재플래싱</li>
+            <li><strong>문제점</strong>: 부팅 30초 이상 연장, EEPROM 수명 단축, 내구도 하락</li>
+            <li><strong>지능형 검증</strong>: 현재 파라미터를 고속 스캔 → <strong>불일치 모터만</strong> 부분 플래싱</li>
+            <li><strong>효과</strong>: 정상 시 약 1초 기동, 불필요한 쓰기 사이클 방지</li>
+          </ul>
+        </div>
+        <div class="mermaid-container">
+          <div class="mermaid">
+            graph TD
+              Start[부팅 시 데몬 시작] --> Check{모터 파라미터 체크}
+              Check -- 일치 --> Skip[플래싱 생략 / 약 1초 기동]
+              Check -- 불일치 --> Reflash[대상 모터 부분 플래싱]
+              Skip --> Ready[가동 준비 완료]
+              Reflash --> Ready
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 11 : Safety torque & overcurrent -->
+    <div class="slide" data-notes="안전도 강화했습니다. 앱을 닫을 때 토크가 풀려 머리가 낙하해 스튜어트 기구가 파손되던 문제를, 종료 즉시 토크를 강제 활성화해 자세를 고정하도록 했습니다. 또 신형 전원 출력에 맞춰 과전류 보호 임계치를 재보정해 격렬한 동작 시 전원 컷다운을 예방했습니다.">
+      <div class="slide-header">
+        <span class="slide-tag">03. 하드웨어/모터</span>
+        <span class="slide-time">안전 · 전력</span>
+      </div>
+      <h2>안전 토크 잠금 &amp; 과전류 보호 개선</h2>
+      <div style="margin-top: 24px;">
+        <div class="card">
+          <div class="card-title">🛡️ 앱 종료 시 안전 토크 잠금 (<code>enable_torque</code>)</div>
+          <p>앱·대시보드를 닫거나 예외로 종료되는 순간, 머리/링크가 중력으로 떨어져 스튜어트 기구가 파손되지 않도록 <strong>모터 토크를 즉시 강제 활성화</strong>해 자세를 고정.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">⚡ 과전류 보호 임계치 재보정</div>
+          <p>신형 전원 어댑터 출력 수준에 맞춰 과전류 센서의 안전 마진을 재조정. 격렬한 매크로 동작 시 <strong>시스템 전원(GPIO)이 즉시 차단</strong>되던 현상을 예방.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 12 : scan_motors CLI -->
+    <div class="slide" data-notes="개발 편의를 위해 모터 점검 CLI도 고도화했습니다. 무선·특정 포트를 직접 지정해 스캔할 수 있고, 모터를 이름이 아닌 순수 하드웨어 ID로 매핑해 명칭 충돌 문제를 근본 해결했습니다.">
+      <div class="slide-header">
+        <span class="slide-tag">03. 하드웨어/모터</span>
+        <span class="slide-time">모터 CLI</span>
+      </div>
+      <h2>모터 모니터링 CLI 고도화</h2>
+      <div style="margin-top: 20px;">
+        <p style="margin-bottom: 16px; font-size: 1.1rem;">TTL 데이지체인의 9개 서보 중 어느 것이 응답하지 않는지 현장에서 바로 진단합니다.</p>
+        <pre><code class="language-bash"># 무선 모드 또는 특정 시리얼 포트를 직접 지정해 점검
+scan_motors --wireless --port /dev/ttyUSB0</code></pre>
+        <ul style="margin-top: 16px; font-size: 1.1rem;">
+          <li><strong><code>--wireless</code> / <code>--port</code></strong>: 무선·멀티 포트 환경에서도 연결된 모터 ID/상태 즉시 확인</li>
+          <li><strong>ID 기반 단독 셋업</strong>: 이름(name)을 거치지 않고 순수 하드웨어 ID로만 매핑 → 명칭 충돌 근본 해소</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- SLIDE 13 : Windows -->
+    <div class="slide" data-notes="셋째 축은 멀티 OS, 특히 Windows 지원입니다. 임시 폴더 삭제 실패(PermissionError)를 컨텍스트 매니저로 해결하고, 이모지·특수문자 경로의 UnicodeEncodeError를 방어했으며, get_ip_address를 윈도우 소켓에 맞게 보정했습니다.">
+      <div class="slide-header">
+        <span class="slide-tag">04. 플랫폼 &amp; 앱 환경</span>
+        <span class="slide-time">Windows</span>
+      </div>
+      <h2>Windows OS 풀 체인 호환성</h2>
+      <div class="grid-2" style="margin-top: 24px;">
+        <div>
+          <div class="card">
+            <div class="card-title">📁 임시 폴더 리소스 유출 방지</div>
+            <p>빌드 중 임시 파일 미해제로 발생하던 파일 잠김·삭제 에러(<code>PermissionError</code>)를 <strong>컨텍스트 매니저</strong>로 안전 폐기되도록 해결.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">🌐 get_ip_address 보정</div>
+            <p>리눅스 전용 소켓에 종속됐던 IP 검색·파싱을 윈도우 소켓에서도 동작하도록 수정(대시보드 접속 주소에 직접 영향).</p>
+          </div>
+        </div>
+        <div>
+          <div class="alert important">
+            <div class="alert-important-title">⚠️ UnicodeEncodeError 방어</div>
+            이모지·다국어 특수문자가 앱 이름/경로에 섞여도 Windows에서 빌드가 크래시되지 않도록 문자열 변환 과정을 전면 정비.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 14 : App Assistant & venv -->
+    <div class="slide" data-notes="앱 어시스턴트도 강화했습니다. 대화형 앱 템플릿으로 음성 상호작용 앱의 뼈대를 즉시 생성하고, 패키지 네이밍 충돌을 막는 고유 접미사를 부여하며, 가상환경이 꼬였을 때 대시보드의 Reset Venv 버튼으로 복구할 수 있습니다.">
+      <div class="slide-header">
+        <span class="slide-tag">04. 플랫폼 &amp; 앱 환경</span>
+        <span class="slide-time">App Assistant · venv</span>
+      </div>
+      <h2>App Assistant &amp; 가상환경(venv) UI</h2>
+      <div class="grid-2" style="margin-top: 24px;">
+        <div>
+          <ul style="font-size: 1.1rem; line-height: 1.8;">
+            <li><strong>대화 앱 템플릿</strong>: <code>--template conversation</code>으로 음성 상호작용 앱 스켈레톤 자동 생성</li>
+            <li><strong>패키지 충돌 방지</strong>: 생성 시 고유 접미사 부여로 네이밍 충돌 예방</li>
+            <li><strong>원클릭 venv 초기화</strong>: 라이브러리 충돌 시 대시보드 <strong>"Reset Venv"</strong> 버튼으로 복구</li>
+          </ul>
+        </div>
+        <div>
+          <pre><code class="language-bash"># 대화형 앱 스켈레톤 생성
+reachy-mini-app-assistant create \
+  --template conversation</code></pre>
+          <div class="alert tip">
+            <div class="alert-tip-title">💡 대시보드 뷰 추가</div>
+            "Virtual Environment Reset" UI 컴포넌트가 신규 추가되어 패키지 꼬임을 브라우저 클릭만으로 수리.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 15 : Summary -->
+    <div class="slide" data-notes="요약하자면 네 가지입니다. 완전 공개된 검증 기구 플랫폼 위에서, 저지연 미디어, 모터 내구성·안전성, 크로스 플랫폼 개발 환경이 모두 향상되었습니다.">
+      <div class="slide-header">
+        <span class="slide-tag">05. 요약</span>
+        <span class="slide-time">종합</span>
+      </div>
+      <h2>1개년 변경 &amp; 하드웨어 종합 요약</h2>
+      <div class="grid-2" style="margin-top: 24px;">
+        <div class="card" style="border-top: 4px solid #a855f7;">
+          <div class="card-title" style="font-size: 1.2rem;">🧩 검증된 기구 플랫폼</div>
+          <p style="margin-top: 8px;">9 DOF·스튜어트 메커니즘, Dynamixel 구동계, CM4 전장이 URDF/MJCF·STL·OnShape로 <strong>완전 공개</strong> → 학습·시뮬레이션·확장 자유.</p>
+        </div>
+        <div class="card" style="border-top: 4px solid var(--primary);">
+          <div class="card-title" style="font-size: 1.2rem;">⚡ 저지연 (Low Latency)</div>
+          <p style="margin-top: 8px;">GStreamer 표준화 + WebRTC 양방향, 버퍼 복사 제거·Opus 최적화·스레드 풀로 상호작용 응답성 향상.</p>
+        </div>
+        <div class="card" style="border-top: 4px solid var(--accent);">
+          <div class="card-title" style="font-size: 1.2rem;">🛠️ 내구성·안전성</div>
+          <p style="margin-top: 8px;">조건부 플래싱으로 EEPROM 마모↓, 종료 시 토크 홀드로 낙하·파손 방지, 과전류 보호 재보정.</p>
+        </div>
+        <div class="card" style="border-top: 4px solid #f59e0b;">
+          <div class="card-title" style="font-size: 1.2rem;">💻 크로스 플랫폼 개발</div>
+          <p style="margin-top: 8px;">Windows 풀체인, App Assistant·Venv Reset, 마이크 케이블 교체 등 트러블슈팅 문서 보강.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 16 : Closing -->
+    <div class="slide title-slide" data-notes="발표는 여기까지입니다. 먼저 하드웨어 구조와 OnShape CAD로 기구를 이해하고, 기구학 코드와 URDF를 대조한 뒤, examples의 look_at·sound_doa·imu를 직접 구동해 보시길 권합니다. 감사합니다.">
+      <div class="flex-center">
+        <span class="slide-tag" style="margin-bottom: 24px;">학습 제안 &amp; Q&amp;A</span>
+        <h1 style="font-size: 3.5rem;">Thank You</h1>
+        <h2 style="font-size: 1.5rem; font-weight: 300; color: var(--text-muted); margin-top: 16px;">hardware.md → 기구학 코드 ↔ URDF → examples 순으로 학습</h2>
+        <p style="margin-top: 28px; color: var(--accent); font-family: var(--font-mono);">
+          github.com/orocapangyo/reachy-mini
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Slide Controls -->
+  <div id="controls">
+    <button class="btn" id="prev-btn">◀ 이전</button>
+    <span id="slide-number" style="font-family: var(--font-mono); font-size: 1.1rem; padding: 0 8px;">1 / 16</span>
+    <button class="btn" id="next-btn">다음 ▶</button>
+  </div>
+
+  <!-- Progress Bar -->
+  <div id="progress-container">
+    <div id="progress-bar"></div>
+  </div>
+
+  <!-- Notes Panel -->
+  <div id="notes-panel">
+    <div id="notes-panel-header">
+      <h3 style="color: var(--accent);">🎤 현재 슬라이드 발표 대본</h3>
+      <button class="btn" id="close-notes-btn" style="padding: 4px 10px; font-size: 0.85rem;">닫기</button>
+    </div>
+    <div id="notes-content">
+      여기에 대본이 표시됩니다.
+    </div>
+  </div>
+
+  <!-- Script for Navigation -->
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const slideNumberText = document.getElementById('slide-number');
+    const progressBar = document.getElementById('progress-bar');
+    const notesPanel = document.getElementById('notes-panel');
+    const notesContent = document.getElementById('notes-content');
+    const closeNotesBtn = document.getElementById('close-notes-btn');
+
+    let currentSlide = 0;
+    const totalSlides = slides.length;
+
+
+    function updateSlides() {
+      slides.forEach((slide, idx) => {
+        slide.className = 'slide';
+        if (idx === currentSlide) {
+          slide.classList.add('active');
+        } else if (idx < currentSlide) {
+          slide.classList.add('prev');
+        }
+      });
+
+      // Update slide number text
+      slideNumberText.textContent = `${currentSlide + 1} / ${totalSlides}`;
+
+      // Update progress bar
+      const progressPercent = ((currentSlide + 1) / totalSlides) * 100;
+      progressBar.style.width = `${progressPercent}%`;
+
+      // Update speaker notes
+      const notes = slides[currentSlide].getAttribute('data-notes');
+      notesContent.textContent = notes || "이 슬라이드에 등록된 대본이 없습니다.";
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        updateSlides();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateSlides();
+      }
+    }
+
+    function toggleNotes() {
+      if (notesPanel.style.display === 'block') {
+        notesPanel.style.display = 'none';
+      } else {
+        notesPanel.style.display = 'block';
+      }
+    }
+
+    // Event Listeners
+    nextBtn.addEventListener('click', nextSlide);
+    prevBtn.addEventListener('click', prevSlide);
+    closeNotesBtn.addEventListener('click', () => notesPanel.style.display = 'none');
+
+    // Keyboard Navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key.toLowerCase() === 's') {
+        toggleNotes();
+      } else if (e.key === 'Home') {
+        currentSlide = 0;
+        updateSlides();
+      } else if (e.key === 'End') {
+        currentSlide = totalSlides - 1;
+        updateSlides();
+      }
+    });
+
+    // Initialize
+    updateSlides();
+  </script>
+
+  <!-- Prism script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

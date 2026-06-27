@@ -92,9 +92,10 @@
 2. **한국어 어절 오류율(WER) 해석 주의**:
    * 띄어쓰기를 지키지 않으면 오류로 잡히는 WER 특성상, `tiny` 모델의 평균 WER(`10.4%`)이 `base` 모델(`11.5%`)보다 낮게 나오는 수치적 왜곡이 존재합니다. 한국어 평가 시에는 반드시 글자의 개별 정확성을 담보하는 **CER(공백제외)** 지표를 기준 척도로 삼아야 합니다.
   
+## 3. STT 평가지표
 ---
 
-## 1. 지연 시간 (Latency) 평가 지표 및 측정법
+### 3.1. 지연 시간 (Latency) 평가 지표 및 측정법
 
 자연스러운 대화를 위해서는 아래 세 가지 구간의 시간을 각각 체크하여 어느 곳에서 병목이 생기는지 확인해야 합니다. 파이썬의 `time.perf_counter()`를 사용하면 밀리초(ms) 단위로 정밀하게 측정할 수 있습니다.
 
@@ -107,24 +108,11 @@
 
 * **정의:** VAD가 잘라준 오디오 데이터를 `Faster-Whisper`에 넘겨준 순간부터, 텍스트 변환 결과가 완벽히 출력될 때까지 걸리는 순수 연산 시간입니다.
 * **측정 코드 예시:**
-```python
-import time
-
-start_time = time.perf_counter()
-segments, _ = model.transcribe(audio_buffer, beam_size=5)
-text = "".join([seg.text for seg in segments])
-end_time = time.perf_counter()
-
-print(f"STT 순수 연산 시간: {(end_time - start_time) * 1000:.2f} ms")
-
-```
-
-
 * **평가 기준:** 일반 PC(CPU, int8) 환경에서 `base` 모델 기준 **500ms(0.5초) 이하**로 떨어지면 합격입니다. 1초를 넘어가면 모델 크기를 낮추거나(`tiny`), 양자화 설정을 다시 점검해야 합니다.
 
 ---
 
-## 2. 정확성 (Accuracy) 평가 지표
+## 3.2. 정확성 (Accuracy) 평가 지표
 
 음성인식의 정확성을 평가할 때는 사람이 직접 받아 적은 정답 텍스트(Ground Truth)와 AI가 인식한 텍스트(Prediction)를 비교하는 알고리즘 지표를 사용합니다.
 

@@ -49,9 +49,7 @@
 * **Local (로컬 모드)**: 
   * `HF_REALTIME_CONNECTION_MODE`가 `local`인 경우, 환경 변수(`.env`)에 입력해 둔 `HF_REALTIME_WS_URL` 경로로 WebSocket을 직접 연결합니다.
 ## **S2S WebSocket 서버를 구동**
-### 1. 실행하실 방법 (Kokoro 구동)
-
-### 2. 1번 옵션이 반응을 안 해 다른 옵션 선택
+### 1. 실행하실 방법
 speech-to-speech --llm_backend responses-api --responses_api_base_url http://localhost:11434/v1 --model_name gemma4:cloud --responses_api_api_key dummy --device cpu --stt whisper --stt_model_name openai/whisper-base --stt_torch_dtype float32 --language ko --tts facebookMMS --tts_language ko
 
 로컬에서 **실시간 S2S WebSocket 서버를 구동(호스팅)하는 명령**.

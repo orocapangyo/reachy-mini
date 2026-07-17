@@ -35,6 +35,19 @@
 | **네트워크 상태** | 인터넷이 끊겨도 로컬에서 작동 가능 | 외부 클라우드 접속을 위해 인터넷 연결 필수 |
 
 ---
+### 1. OpenAI Realtime API 프로토콜 호환성 레이어 사용
+이 앱은 OpenAI의 실시간 프로토콜(Realtime API)을 처리하도록 개발된 공식 Python SDK의 [`AsyncOpenAI`](file:///c:/work/reachy_mini_conversation_app-main/src/reachy_mini_conversation_app/huggingface_realtime.py#L12) 클라이언트를 그대로 사용합니다. 
+하지만 실제 API 요청은 OpenAI 서버가 아닌 **Hugging Face의 S2S(Speech-to-Speech) 실시간 서버**로 전달되도록 엔드포인트를 우회(Redirect)하도록 되어 있습니다.
+
+* **관련 클래스**: [`HuggingFaceRealtimeHandler`](file:///c:/work/reachy_mini_conversation_app-main/src/reachy_mini_conversation_app/huggingface_realtime.py#L112)
+
+### 2. 동적 세션 할당 및 연결 방식 (Connection Mode)
+[`config.py`](file:///c:/work/reachy_mini_conversation_app-main/src/reachy_mini_conversation_app/config.py)와 [`_build_realtime_client`](file:///c:/work/reachy_mini_conversation_app-main/src/reachy_mini_conversation_app/huggingface_realtime.py#L990) 메서드에 설정된 접속 모드에 따라 엔드포인트를 다르게 설정합니다.
+
+* **Deployed (배포 모드)**: 
+  * `HF_REALTIME_CONNECTION_MODE`가 `deployed`인 경우, Pollen Robotics 측에서 제공하는 프록시 세션 할당기 주소(`https://pollen-robotics-reachy-mini-realtime-url.hf.space/session`)로 HTTP POST 요청을 보내 활성화된 Hugging Face S2S 인스턴스의 `connect_url`(WebSocket 연결 정보)을 얻어옵니다.
+* **Local (로컬 모드)**: 
+  * `HF_REALTIME_CONNECTION_MODE`가 `local`인 경우, 환경 변수(`.env`)에 입력해 둔 `HF_REALTIME_WS_URL` 경로로 WebSocket을 직접 연결합니다.
 ## **S2S WebSocket 서버를 구동**
 ### 1. 실행하실 방법 (Kokoro 구동)
 1. **백엔드 서버 터미널**에서 다시 `kokoro` 옵션으로 서버를 켭니다:

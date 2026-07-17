@@ -50,11 +50,6 @@
   * `HF_REALTIME_CONNECTION_MODE`가 `local`인 경우, 환경 변수(`.env`)에 입력해 둔 `HF_REALTIME_WS_URL` 경로로 WebSocket을 직접 연결합니다.
 ## **S2S WebSocket 서버를 구동**
 ### 1. 실행하실 방법 (Kokoro 구동)
-1. **백엔드 서버 터미널**에서 다시 `kokoro` 옵션으로 서버를 켭니다:
-   ```powershell
-   speech-to-speech --llm_backend responses-api --responses_api_base_url http://localhost:11434/v1 --model_name gemma4:cloud --responses_api_api_key dummy --device cpu --tts kokoro
-   ```
-kokoro 한국어 미지원 따라서 다음과 같이 수정
 
 ### 2. 1번 옵션이 반응을 안 해 다른 옵션 선택
 speech-to-speech --llm_backend responses-api --responses_api_base_url http://localhost:11434/v1 --model_name gemma4:cloud --responses_api_api_key dummy --device cpu --stt whisper --stt_model_name openai/whisper-base --stt_torch_dtype float32 --language ko --tts facebookMMS --tts_language ko

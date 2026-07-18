@@ -49,6 +49,55 @@
   * `HF_REALTIME_CONNECTION_MODE`가 `deployed`인 경우, Pollen Robotics 측에서 제공하는 프록시 세션 할당기 주소(`https://pollen-robotics-reachy-mini-realtime-url.hf.space/session`)로 HTTP POST 요청을 보내 활성화된 Hugging Face S2S 인스턴스의 `connect_url`(WebSocket 연결 정보)을 얻어옵니다.
 * **Local (로컬 모드)**: 
   * `HF_REALTIME_CONNECTION_MODE`가 `local`인 경우, 환경 변수(`.env`)에 입력해 둔 `HF_REALTIME_WS_URL` 경로로 WebSocket을 직접 연결합니다.
+---
+### 1. 전체 오디오 데이터 흐름 (Data Flow)
+
+```
+[사용자 목소리] 
+       │
+       ▼
+ 1. 마이크 입력  (Reachy Mini SDK ➔ LocalStream.record_loop)
+       │
+       ▼
+ 2. 오디오 전송  (WebSocket 스트리밍 ➔ 백엔드 speech-to-speech)
+       │
+       ▼
+ 3. 음성 인식    (Whisper 모델이 텍스트로 변환)
+       │
+       ▼
+ 4. 답변 생성    (Ollama를 통해 대화 텍스트 생성)
+       │
+       ▼
+ 5. 음성 합성    (facebookMMS / Kokoro가 실시간 오디오 합성)
+       │
+       ▼
+ 6. 오디오 수신  (WebSocket 스트리밍 ➔ 클라이언트 앱)
+       │
+       ▼
+ 7. 스피커 출력  (LocalStream.play_loop ➔ Reachy Mini SDK ➔ 스피커)
+```
+
+
+
+### 2. 핵심 오디오 컴포넌트
+
+* **음성 캡처 ([LocalStream.record_loop()](file:///c:/work/reachy_mini_conversation_app-main/src/reachy_mini_conversation_app/console.py#L859))**: 
+  로봇/PC 마이크로부터 오디오 샘플을 주기적으로 읽어와 [huggingface_realtime.py](file:///c:/work/reachy_mini_conversation_app-main/src/reachy_mini_conversation_app/huggingface_realtime.py)에 정의된 핸들러를 거쳐 로컬 백엔드 서버로 전송합니다.
+* **음성 재생 ([LocalStream.play_loop()](file:///c:/work/reachy_mini_conversation_app-main/src/reachy_mini_conversation_app/console.py#L870))**: 
+  백엔드 서버로부터 합성되어 돌아온 실시간 음성 프레임 데이터를 받아서 Float32로 리샘플링한 후 스피커를 통해 출력합니다.
+* **말 끊기 기능 (Barge-in, [LocalStream.clear_audio_queue()](file:///c:/work/reachy_mini_conversation_app-main/src/reachy_mini_conversation_app/console.py#L828))**: 
+  로봇이 대답을 하는 도중에 사용자가 다시 말을 시작하면 백엔드가 이를 감지하고 이벤트를 보냅니다. 클라이언트 앱은 즉시 스피커 출력 큐를 비워(`clear_player`) 로봇의 대답을 즉각 멈춥니다.
+
+
+
+### 3. 현재 연동 방식 (Local Server)
+* **STT (입력)**: [`openai/whisper-base`](https://huggingface.co/openai/whisper-base) 모델이 로컬 CPU 환경에서 동작하여 마이크 입력을 텍스트로 변환합니다.
+* **LLM (뇌)**: Ollama 연동을 통해 `gemma4:cloud` 모델이 텍스트 기반 답변을 생각합니다.
+* **TTS (출력)**: [`facebookMMS`](https://huggingface.co/facebook/mms-tts-kor) (한국어 모델)이 대화 응답 텍스트를 실시간 한국어 목소리로 변환해 스피커로 내보냅니다.
+---
+
+
+
 ## **S2S WebSocket 서버를 구동**
 ### 1. 실행하실 방법
 speech-to-speech --llm_backend responses-api --responses_api_base_url http://localhost:11434/v1 --model_name gemma4:cloud --responses_api_api_key dummy --device cpu --stt whisper --stt_model_name openai/whisper-base --stt_torch_dtype float32 --language ko --tts facebookMMS --tts_language ko

@@ -30,6 +30,18 @@ reachy-mini는 소형 로봇 플랫폼 또는 소프트웨어 프로젝트로, �
 - **저장소**: https://github.com/orocapangyo/reachy_mini_stl_convexify.git
 - **목적**: Reachy Mini 로봇의 STL 파일을 convex hull로 변환하여 물리 시뮬레이션 성능 최적화
 
+### reachy_mini_skins
+
+- **경로**: `reachy_mini_skins/`
+- **저장소**: https://huggingface.co/spaces/pollen-robotics/reachy-mini-skins.git
+- **목적**: Reachy Mini 로봇의 3D 프린트용 커스텀 스킨 및 외장 STL 파일 라이브러리
+
+### reachy_eyes
+
+- **경로**: `reachy_eyes/`
+- **저장소**: https://github.com/brainwavecollective/reachy-eyes
+- **목적**: Reachy Mini 로봇의 화면용 눈(Eye) 디자인 및 구동 라이브러리
+
 ### 서브모듈 사용 방법
 
 ```bash

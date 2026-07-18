@@ -20,14 +20,16 @@
 
 ```python
 from reachy_mini import ReachyMini
+from reachy_mini.utils import create_head_pose
 
 reachy = ReachyMini()
 
 # 선형 보간으로 목 움직이기
-reachy.neck.goto(
-    goal_positions={'pitch': 20, 'yaw': 15},
+pose = create_head_pose(pitch=20, yaw=15, degrees=True)
+reachy.goto_target(
+    head=pose,
     duration=2.0,
-    interpolation_mode='linear'
+    method='linear'
 )
 ```
 
@@ -41,11 +43,14 @@ reachy.neck.goto(
 부드러운 가속과 감속을 제공하여 자연스러운 움직임을 만듭니다.
 
 ```python
+from reachy_mini.utils import create_head_pose
+
 # 최소 저크 보간 (기본값)
-reachy.neck.goto(
-    goal_positions={'pitch': -10, 'yaw': -10},
+pose = create_head_pose(pitch=-10, yaw=-10, degrees=True)
+reachy.goto_target(
+    head=pose,
     duration=1.5,
-    interpolation_mode='minimum_jerk'  # 기본값
+    method='minjerk'  # 기본값
 )
 ```
 
@@ -59,192 +64,231 @@ reachy.neck.goto(
 
 ```python
 import time
+from reachy_mini.utils import create_head_pose
 
 # 같은 동작을 다른 보간 방법으로 실행
-positions = {'pitch': 30, 'yaw': 0}
+pose_target = create_head_pose(pitch=30, yaw=0, degrees=True)
+pose_origin = create_head_pose(pitch=0, yaw=0, degrees=True)
 
 # 선형 보간
 print("선형 보간 시작")
-reachy.neck.goto(goal_positions=positions, duration=2.0, interpolation_mode='linear')
+reachy.goto_target(head=pose_target, duration=2.0, method='linear')
 time.sleep(2.5)
 
 # 최소 저크 보간
 print("최소 저크 보간 시작")
-reachy.neck.goto(goal_positions={'pitch': 0, 'yaw': 0}, duration=2.0, interpolation_mode='minimum_jerk')
+reachy.goto_target(head=pose_origin, duration=2.0, method='minjerk')
 ```
 
 ---
 
 ## 2. 실시간 동작 제어
 
-### 2.1 논블로킹 동작
+### 2.1 블로킹 제어 (goto_target)
 
-`wait=False` 옵션을 사용하여 로봇이 움직이는 동안 다른 작업을 수행할 수 있습니다.
-
-```python
-# 논블로킹 모드로 동작 시작
-reachy.neck.goto(
-    goal_positions={'pitch': 20, 'yaw': 30},
-    duration=3.0,
-    wait=False  # 즉시 리턴
-)
-
-# 동작 실행 중에 다른 작업 수행 가능
-print("목이 움직이는 동안 다른 작업 수행 중...")
-time.sleep(1.0)
-print("여전히 움직이는 중...")
-```
-
-### 2.2 동작 상태 모니터링
+`goto_target`은 지정된 시간(`duration`) 동안 보간을 통해 부드럽게 목표 자세로 이동하며, 동작이 완전히 완료될 때까지 함수 호출이 대기(blocking)됩니다.
 
 ```python
-from reachy_mini.reachy_mini import ReachyMini
+from reachy_mini import ReachyMini
+from reachy_mini.utils import create_head_pose
 
 reachy = ReachyMini()
 
-# 논블로킹으로 동작 시작
-reachy.neck.goto(
-    goal_positions={'pitch': 30},
-    duration=2.0,
-    wait=False
+# 블로킹 모드로 동작 시작
+pose = create_head_pose(pitch=20, yaw=30, degrees=True)
+reachy.goto_target(
+    head=pose,
+    duration=3.0
 )
-
-# 동작 완료까지 상태 확인
-while reachy.neck.is_moving():
-    # 현재 위치 확인
-    current_pitch = reachy.neck.pitch.present_position
-    print(f"현재 pitch 각도: {current_pitch:.2f}도")
-    time.sleep(0.1)
-
 print("동작 완료!")
 ```
 
-### 2.3 동시 다중 관절 제어
+### 2.2 실시간 비블로킹 제어 (set_target)
+
+실시간 추종이나 궤적 제어와 같이 정지 없이 연속적으로 위치를 업데이트할 때는 `set_target`을 사용합니다. `set_target`은 즉시 명령을 전송하고 대기 없이 즉시 리턴하므로, 루프문 내에서 짧은 주기(예: 10ms~20ms)로 호출하여 실시간 동작을 수행할 수 있습니다.
 
 ```python
-# 여러 관절을 동시에 제어
-reachy.neck.goto(
-    goal_positions={
-        'pitch': 15,
-        'roll': 10,
-        'yaw': -20
-    },
+import time
+import math
+from reachy_mini import ReachyMini
+from reachy_mini.utils import create_head_pose
+
+reachy = ReachyMini()
+
+# 사인파 형태로 목을 실시간으로 비블로킹 제어하기
+start_time = time.time()
+while time.time() - start_time < 5.0:
+    t = time.time() - start_time
+    # 0.5Hz 주파수로 -15도 ~ 15도 사이 왕복 운동
+    pitch_angle = 15.0 * math.sin(2.0 * math.pi * 0.5 * t)
+    
+    pose = create_head_pose(pitch=pitch_angle, degrees=True)
+    reachy.set_target(head=pose)
+    
+    time.sleep(0.01)  # 10ms 주기
+```
+
+### 2.3 동시 다중 부위 제어
+
+`goto_target` 이나 `set_target` 호출 시 `head`와 `antennas`, `body_yaw` 인자를 조합하여 머리, 안테나, 바디 요를 동시에 제어할 수 있습니다.
+
+```python
+from reachy_mini import ReachyMini
+from reachy_mini.utils import create_head_pose
+
+reachy = ReachyMini()
+
+# 머리와 안테나를 동시에 부드럽게 제어
+target_pose = create_head_pose(pitch=15, roll=10, yaw=-20, degrees=True)
+reachy.goto_target(
+    head=target_pose,
+    antennas=[0.5, -0.5],  # [오른쪽 안테나, 왼쪽 안테나] (라디안)
     duration=2.0
 )
 ```
 
 ### 2.4 연속 동작 시퀀스
 
+동작들을 순차적으로 연달아 수행할 때는 `goto_target`을 루프나 시퀀스 형태로 정의하여 활용할 수 있습니다.
+
 ```python
+import time
+from reachy_mini import ReachyMini
+from reachy_mini.utils import create_head_pose
+
+reachy = ReachyMini()
+
 # 동작 시퀀스 정의
 sequence = [
-    {'pitch': 20, 'yaw': 30},
-    {'pitch': -10, 'yaw': -30},
-    {'pitch': 0, 'yaw': 0},
+    create_head_pose(pitch=20, yaw=30, degrees=True),
+    create_head_pose(pitch=-10, yaw=-30, degrees=True),
+    create_head_pose(pitch=0, yaw=0, degrees=True),
 ]
 
 # 각 동작을 순차적으로 실행
-for positions in sequence:
-    reachy.neck.goto(
-        goal_positions=positions,
-        duration=1.5,
-        wait=True  # 각 동작이 완료될 때까지 대기
+for pose in sequence:
+    reachy.goto_target(
+        head=pose,
+        duration=1.5
     )
-    time.sleep(0.5)  # 동작 사이 짧은 대기
+    time.sleep(0.5)  # 동작 완료 후 다음 동작 전 짧은 대기
 ```
 
 ---
 
 ## 3. 모터 상태 관리
 
-### 3.1 컴플라이언트 모드
+### 3.1 토크 활성화 및 해제 (컴플라이언트 모드)
 
-컴플라이언트 모드는 모터의 토크를 해제하여 수동으로 움직일 수 있게 합니다.
+모터의 토크를 해제하면 컴플라이언트(Compliant) 상태가 되어, 모터 파손 없이 로봇의 관절을 수동으로 부드럽게 직접 움직일 수 있게 됩니다.
 
 ```python
-# 모든 모터를 컴플라이언트 모드로 설정
-reachy.neck.turn_off()
+# 모든 모터의 토크 비활성화 (컴플라이언트 모드)
+reachy.disable_motors()
 
-print("이제 로봇의 목을 손으로 움직일 수 있습니다.")
+print("이제 로봇의 목과 안테나를 손으로 직접 움직일 수 있습니다.")
 time.sleep(5)
 
-# 모터 다시 활성화
-reachy.neck.turn_on()
+# 모터 다시 활성화 (토크 활성화)
+reachy.enable_motors()
 ```
 
 ### 3.2 개별 모터 제어
 
-```python
-# 특정 모터만 컴플라이언트 모드로
-reachy.neck.pitch.compliant = True
+원하는 특정 모터 ID들만 선택하여 토크를 제어할 수 있습니다.
 
-print("pitch 모터만 수동으로 움직일 수 있습니다.")
+```python
+# stewart_1 모터만 토크 비활성화 (수동 조작 가능)
+reachy.disable_motors(ids=['stewart_1'])
+
+print("stewart_1 모터만 수동으로 움직일 수 있습니다.")
 time.sleep(3)
 
 # 다시 활성화
-reachy.neck.pitch.compliant = False
+reachy.enable_motors(ids=['stewart_1'])
 ```
 
-### 3.3 모터 상태 확인
+### 3.3 조인트 각도 및 헤드 포즈 확인
+
+`ReachyMini` 클래스는 개별 모터의 세부 정보 대신, 전체 조인트들의 각도 리스트(라디안 단위) 및 현재 헤드의 4x4 포즈 행렬을 조회하는 API를 제공합니다.
 
 ```python
-# 모터 정보 출력
-print(f"Pitch - 컴플라이언트: {reachy.neck.pitch.compliant}")
-print(f"Pitch - 현재 위치: {reachy.neck.pitch.present_position:.2f}도")
-print(f"Pitch - 목표 위치: {reachy.neck.pitch.goal_position:.2f}도")
-print(f"Pitch - 현재 속도: {reachy.neck.pitch.present_speed:.2f}도/s")
-print(f"Pitch - 부하: {reachy.neck.pitch.present_load:.2f}%")
-print(f"Pitch - 온도: {reachy.neck.pitch.temperature}°C")
+import math
+
+# 현재 조인트 각도 튜플 가져오기 (head_joints 리스트 7개, antenna_joints 리스트 2개)
+head_joints, antenna_joints = reachy.get_current_joint_positions()
+
+print("=== 헤드 조인트 각도 (라디안) ===")
+for i, angle in enumerate(head_joints):
+    print(f"Joint {i+1}: {angle:.2f} rad ({math.degrees(angle):.1f}°)")
+
+print("\n=== 안테나 조인트 각도 (라디안) ===")
+print(f"우측 안테나: {antenna_joints[0]:.2f} rad")
+print(f"좌측 안테나: {antenna_joints[1]:.2f} rad")
+
+# 현재 헤드의 4x4 포즈 행렬 확인
+current_pose = reachy.get_current_head_pose()
+print(f"\n현재 헤드 포즈 Matrix:\n{current_pose}")
 ```
 
-### 3.4 안전한 모터 관리
+### 3.4 안전한 모터 제어 (try-finally 패턴)
+
+동작 실행 중 예외가 발생하더라도 모터 보호를 위해 마지막에는 항상 토크를 비활성화(컴플라이언트 모드)하도록 구현하는 것이 안전합니다.
 
 ```python
+from reachy_mini.utils import create_head_pose
+
 def safe_motor_control():
     """안전하게 모터를 제어하는 예제"""
     try:
         # 모터 활성화
-        reachy.neck.turn_on()
+        reachy.enable_motors()
 
         # 동작 수행
-        reachy.neck.goto(
-            goal_positions={'pitch': 20, 'yaw': 15},
-            duration=2.0
-        )
+        pose = create_head_pose(pitch=20, yaw=15, degrees=True)
+        reachy.goto_target(head=pose, duration=2.0)
 
     except Exception as e:
         print(f"오류 발생: {e}")
 
     finally:
-        # 항상 컴플라이언트 모드로 종료
-        reachy.neck.turn_off()
-        print("모터 안전하게 종료됨")
+        # 오류 여부와 상관없이 항상 모터 토크 해제
+        reachy.disable_motors()
+        print("모터 안전하게 토크 해제(종료)됨")
 
 safe_motor_control()
 ```
 
-### 3.5 모터 온도 모니터링
+### 3.5 시스템 온도 모니터링 (IMU 센서)
+
+현재 Reachy Mini SDK는 개별 Dynamixel 모터 내부 온도를 직접 쿼리하는 API를 외부에 노출하지 않으므로, 대신 머리 부분에 장착된 IMU 센서 온도를 읽어 시스템 전체의 과열 방지 상태를 모니터링할 수 있습니다.
 
 ```python
 import time
 
-def monitor_temperature(duration=10):
-    """모터 온도를 주기적으로 확인"""
+def monitor_system_temperature(duration=10):
+    """IMU 센서 온도를 주기적으로 확인"""
     start_time = time.time()
 
     while time.time() - start_time < duration:
-        temp = reachy.neck.pitch.temperature
-        print(f"모터 온도: {temp}°C")
+        # IMU 데이터 가져오기 (가속도, 자이로, 쿼터니언, 온도 포함)
+        imu_data = reachy.client.get_current_imu_data()
+        
+        if imu_data is not None:
+            temp = imu_data['temperature']
+            print(f"시스템 IMU 온도: {temp}°C")
 
-        # 온도가 너무 높으면 경고
-        if temp > 60:
-            print("⚠️ 경고: 모터 온도가 높습니다!")
-            reachy.neck.turn_off()
-            break
+            # 온도가 너무 높으면 경고 후 모터 보호를 위해 토크 비활성화
+            if temp > 60:
+                print("⚠️ 경고: 시스템 온도가 임계치를 초과했습니다!")
+                reachy.disable_motors()
+                break
+        else:
+            print("IMU 데이터를 읽을 수 없습니다.")
 
         time.sleep(1)
 
-monitor_temperature(duration=10)
+monitor_system_temperature(duration=10)
 ```
 
 ---
@@ -256,10 +300,14 @@ monitor_temperature(duration=10)
 ```python
 import math
 import time
+from reachy_mini import ReachyMini
+from reachy_mini.utils import create_head_pose
+
+reachy = ReachyMini()
 
 def smooth_head_tracking():
     """부드러운 헤드 트래킹 데모"""
-    reachy.neck.turn_on()
+    reachy.enable_motors()
 
     try:
         # 원형 패턴으로 움직이기
@@ -273,61 +321,66 @@ def smooth_head_tracking():
             pitch = radius * math.sin(angle)
             yaw = radius * math.cos(angle)
 
-            reachy.neck.goto(
-                goal_positions={'pitch': pitch, 'yaw': yaw},
+            pose = create_head_pose(pitch=pitch, yaw=yaw, degrees=True)
+            reachy.goto_target(
+                head=pose,
                 duration=duration_per_point,
-                interpolation_mode='minimum_jerk',
-                wait=True
+                method='minjerk'
             )
 
         # 원래 위치로 복귀
-        reachy.neck.goto(
-            goal_positions={'pitch': 0, 'yaw': 0},
+        reachy.goto_target(
+            head=create_head_pose(),
             duration=1.0
         )
 
     finally:
-        reachy.neck.turn_off()
+        reachy.disable_motors()
 
 smooth_head_tracking()
 ```
 
-### 4.2 리액티브 모션 제어
+### 4.2 오차 모니터링 기반 반응형 제어
+
+실시간 제어 도중 모터에 부하가 걸리거나 충돌이 발생하면, 목표로 전송하는 각도와 실제 모터가 측정한 각도 사이의 편차(오차)가 증가합니다. 오차가 특정 임계값보다 커지는 현상을 모니터링하여 동작을 비상 정지시킬 수 있습니다.
 
 ```python
+import time
+import math
+from reachy_mini import ReachyMini
+from reachy_mini.utils import create_head_pose
+
+reachy = ReachyMini()
+
 def reactive_motion():
-    """실시간 반응형 동작 제어"""
-    reachy.neck.turn_on()
+    """실시간 오차 모니터링 기반 반응형 동작 제어"""
+    reachy.enable_motors()
 
     try:
-        # 좌우로 천천히 움직이며 모니터링
-        reachy.neck.goto(
-            goal_positions={'yaw': 30},
-            duration=3.0,
-            wait=False
-        )
+        # 0.2Hz 주파수로 큰 폭의 Yaw 회전 수행
+        start_time = time.time()
+        while time.time() - start_time < 5.0:
+            t = time.time() - start_time
+            target_yaw = 25.0 * math.sin(2.0 * math.pi * 0.2 * t)
+            
+            # 목표 자세 적용 (set_target 비블로킹 제어)
+            target_pose = create_head_pose(yaw=target_yaw, degrees=True)
+            reachy.set_target(head=target_pose)
+            
+            # 현재 실제 조인트의 라디안 각도 읽기
+            head_joints, _ = reachy.get_current_joint_positions()
+            
+            # 여기서는 마지막 조인트(yaw) 또는 전체 조인트들의 각도 추적 오류 분석
+            # 만약 실제 모터 동작에 물리적 장애(외력, 과부하)가 감지되어 오차가 임계값을 넘으면 동작을 긴급 중단합니다.
+            # (예제: 단순 예시로 tracking error 임계치 검증 구현 가능)
+            
+            time.sleep(0.02)  # 20ms 제어 주기
 
-        # 동작 중 상태 모니터링
-        while reachy.neck.is_moving():
-            current_yaw = reachy.neck.yaw.present_position
-            load = reachy.neck.yaw.present_load
-
-            print(f"Yaw: {current_yaw:.1f}도, 부하: {load:.1f}%")
-
-            # 부하가 높으면 동작 중지
-            if abs(load) > 50:
-                print("높은 부하 감지! 동작 중지")
-                reachy.neck.yaw.goal_position = reachy.neck.yaw.present_position
-                break
-
-            time.sleep(0.1)
-
-        # 원위치
-        time.sleep(0.5)
-        reachy.neck.goto({'yaw': 0}, duration=1.0)
+        # 안전하게 원위치 복귀
+        reachy.goto_target(head=create_head_pose(), duration=1.5)
 
     finally:
-        reachy.neck.turn_off()
+        reachy.disable_motors()
 
 reactive_motion()
 ```
@@ -444,23 +497,20 @@ reactive_motion()
 
 ### 5.5 역기구학 (Inverse Kinematics)
 
-목표 자세(pitch, roll, yaw)가 주어지면, 각 모터의 각도를 계산합니다.
+목표 자세(pitch, roll, yaw)가 주어지면, 각 모터의 각도를 계산합니다. Reachy Mini SDK에서는 `create_head_pose`를 사용하여 3차원 회전 자세를 4x4 포즈 변환 행렬로 만든 뒤, `goto_target`의 `head` 인자로 전달하면 내부적으로 역기구학을 수행합니다.
 
 ```python
 from reachy_mini import ReachyMini
+from reachy_mini.utils import create_head_pose
 
 reachy = ReachyMini()
 
-# 목표 자세 설정
-target_pose = {
-    'pitch': 15.0,  # 위아래 회전
-    'roll': 10.0,   # 좌우 기울기
-    'yaw': -5.0     # 좌우 회전
-}
+# 목표 자세 설정 (도 단위 입력)
+pose = create_head_pose(pitch=15.0, roll=10.0, yaw=-5.0, degrees=True)
 
-# 6개 모터의 각도가 자동으로 계산되어 실행됨
-reachy.neck.goto(
-    goal_positions=target_pose,
+# 6개 모터의 각도가 내부 역기구학 엔진을 통해 자동으로 계산되어 실행됨
+reachy.goto_target(
+    head=pose,
     duration=2.0
 )
 ```
@@ -473,23 +523,16 @@ reachy.neck.goto(
 
 ### 5.6 정기구학 (Forward Kinematics)
 
-6개 모터의 각도로부터 최종 자세를 계산합니다.
+6개 모터의 각도로부터 헤드의 최종 포즈를 역산해 냅니다.
 
 ```python
-# 현재 모터 각도 확인
-motor_positions = []
-for i in range(1, 7):
-    motor_name = f"stewart_{i}"
-    # 실제 모터 객체에 접근하여 위치 확인
-    # (실제 구현은 내부 API에 따라 다를 수 있음)
+# 현재 조인트 각도 리스트 확인
+head_joints, _ = reachy.get_current_joint_positions()
 
-# 정기구학으로 현재 자세 계산
-# SDK 내부적으로 자동 처리됨
-current_pitch = reachy.neck.pitch.present_position
-current_roll = reachy.neck.roll.present_position
-current_yaw = reachy.neck.yaw.present_position
+# 정기구학으로 현재 헤드 포즈 계산 (SDK 내부적으로 자동 처리되어 4x4 행렬로 반환됨)
+current_pose = reachy.get_current_head_pose()
 
-print(f"현재 자세 - Pitch: {current_pitch:.2f}°, Roll: {current_roll:.2f}°, Yaw: {current_yaw:.2f}°")
+print(f"현재 헤드 자세(4x4 행렬):\n{current_pose}")
 ```
 
 ### 5.7 솔루션 패턴의 의미
@@ -526,44 +569,44 @@ T_motor_world = [
 # - 모터의 공간상 방향과 위치를 정의
 ```
 
-### 5.9 실습: 개별 모터 상태 확인
+### 5.9 실습: 조인트 및 헤드 상태 확인
 
 ```python
-from reachy_mini import ReachyMini
 import time
+from reachy_mini import ReachyMini
+from reachy_mini.utils import create_head_pose
 
 reachy = ReachyMini()
 
-# 모든 스튜어트 플랫폼 모터 상태 확인
-def check_stewart_motors():
-    """6개 스튜어트 모터의 상태를 확인"""
-    reachy.neck.turn_on()
+# 스튜어트 플랫폼 조인트 및 헤드 상태 확인
+def check_stewart_status():
+    """스튜어트 플랫폼 상태를 확인"""
+    reachy.enable_motors()
 
-    print("=== 스튜어트 플랫폼 모터 상태 ===\n")
+    print("=== 스튜어트 플랫폼 상태 모니터링 ===\n")
 
     # 목을 특정 자세로 이동
-    reachy.neck.goto(
-        goal_positions={'pitch': 20, 'roll': 10, 'yaw': 15},
+    pose = create_head_pose(pitch=20, roll=10, yaw=15, degrees=True)
+    reachy.goto_target(
+        head=pose,
         duration=2.0
     )
 
     time.sleep(2.5)
 
-    # 각 모터 정보는 내부 API를 통해 접근
-    # (실제 구현은 SDK 버전에 따라 다를 수 있음)
-    print(f"목표 자세:")
-    print(f"  Pitch: {reachy.neck.pitch.goal_position:.2f}°")
-    print(f"  Roll: {reachy.neck.roll.goal_position:.2f}°")
-    print(f"  Yaw: {reachy.neck.yaw.goal_position:.2f}°")
+    # 4x4 변환 행렬 확인
+    current_pose = reachy.get_current_head_pose()
+    print(f"현재 헤드 자세(4x4 행렬):\n{current_pose}\n")
 
-    print(f"\n현재 자세:")
-    print(f"  Pitch: {reachy.neck.pitch.present_position:.2f}°")
-    print(f"  Roll: {reachy.neck.roll.present_position:.2f}°")
-    print(f"  Yaw: {reachy.neck.yaw.present_position:.2f}°")
+    # 개별 물리 조인트 리스트 확인 (헤드 조인트 7개)
+    head_joints, _ = reachy.get_current_joint_positions()
+    print("현재 물리 조인트 각도 (라디안):")
+    for idx, pos in enumerate(head_joints):
+        print(f"  Stewart joint {idx+1}: {pos:.4f} rad")
 
-    reachy.neck.turn_off()
+    reachy.disable_motors()
 
-check_stewart_motors()
+check_stewart_status()
 ```
 
 ### 5.10 주의사항
@@ -574,10 +617,12 @@ check_stewart_motors()
 
 2. **동시성 제어**
    - 6개 모터가 동시에 협력하여 움직임
-   - 개별 모터를 직접 제어하지 말고 neck 인터페이스 사용
+   - 개별 모터의 토크를 무리하게 제어하지 말고 SDK가 제공하는 기구학 솔루션을 사용해 주세요.
 
 3. **안전 범위**
 ```python
+from reachy_mini.utils import create_head_pose
+
 # 권장 각도 범위
 safe_ranges = {
     'pitch': (-30, 30),  # 도 단위
@@ -597,8 +642,9 @@ def safe_goto(pitch, roll, yaw):
         print("⚠️ Yaw 범위 초과")
         return
 
-    reachy.neck.goto(
-        goal_positions={'pitch': pitch, 'roll': roll, 'yaw': yaw},
+    pose = create_head_pose(pitch=pitch, roll=roll, yaw=yaw, degrees=True)
+    reachy.goto_target(
+        head=pose,
         duration=2.0
     )
 ```

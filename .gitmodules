@@ -6,3 +6,9 @@
 	path = reachy_mini_stl_convexify
 	url = https://github.com/orocapangyo/reachy_mini_stl_convexify.git
 	branch = main
+[submodule "reachy_mini_skins"]
+	path = reachy_mini_skins
+	url = https://huggingface.co/spaces/pollen-robotics/reachy-mini-skins.git
+[submodule "reachy_eyes"]
+	path = reachy_eyes
+	url = https://github.com/brainwavecollective/reachy-eyes.git

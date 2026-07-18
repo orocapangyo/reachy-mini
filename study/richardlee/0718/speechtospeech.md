@@ -49,8 +49,8 @@
   * `HF_REALTIME_CONNECTION_MODE`가 `deployed`인 경우, Pollen Robotics 측에서 제공하는 프록시 세션 할당기 주소(`https://pollen-robotics-reachy-mini-realtime-url.hf.space/session`)로 HTTP POST 요청을 보내 활성화된 Hugging Face S2S 인스턴스의 `connect_url`(WebSocket 연결 정보)을 얻어옵니다.
 * **Local (로컬 모드)**: 
   * `HF_REALTIME_CONNECTION_MODE`가 `local`인 경우, 환경 변수(`.env`)에 입력해 둔 `HF_REALTIME_WS_URL` 경로로 WebSocket을 직접 연결합니다.
----
-### 1. 전체 오디오 데이터 흐름 (Data Flow)
+
+### 3. 전체 오디오 데이터 흐름 (Data Flow)
 
 ```
 [사용자 목소리] 
@@ -79,7 +79,7 @@
 
 
 
-### 2. 핵심 오디오 컴포넌트
+### 4. 핵심 오디오 컴포넌트
 
 * **음성 캡처 ([LocalStream.record_loop()](file:///c:/work/reachy_mini_conversation_app-main/src/reachy_mini_conversation_app/console.py#L859))**: 
   로봇/PC 마이크로부터 오디오 샘플을 주기적으로 읽어와 [huggingface_realtime.py](file:///c:/work/reachy_mini_conversation_app-main/src/reachy_mini_conversation_app/huggingface_realtime.py)에 정의된 핸들러를 거쳐 로컬 백엔드 서버로 전송합니다.
@@ -90,7 +90,7 @@
 
 
 
-### 3. 현재 연동 방식 (Local Server)
+### 5. 현재 연동 방식 (Local Server)
 * **STT (입력)**: [`openai/whisper-base`](https://huggingface.co/openai/whisper-base) 모델이 로컬 CPU 환경에서 동작하여 마이크 입력을 텍스트로 변환합니다.
 * **LLM (뇌)**: Ollama 연동을 통해 `gemma4:cloud` 모델이 텍스트 기반 답변을 생각합니다.
 * **TTS (출력)**: [`facebookMMS`](https://huggingface.co/facebook/mms-tts-kor) (한국어 모델)이 대화 응답 텍스트를 실시간 한국어 목소리로 변환해 스피커로 내보냅니다.

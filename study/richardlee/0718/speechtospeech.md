@@ -35,7 +35,8 @@
 | **네트워크 상태** | 인터넷이 끊겨도 로컬에서 작동 가능 | 외부 클라우드 접속을 위해 인터넷 연결 필수 |
 
 ---
-### 1. OpenAI Realtime API 프로토콜 호환성 레이어 사용
+## Speech To Speech 
+### 1.OpenAI Realtime API 프로토콜 호환성 레이어 사용
 이 앱은 OpenAI의 실시간 프로토콜(Realtime API)을 처리하도록 개발된 공식 Python SDK의 [`AsyncOpenAI`](file:///c:/work/reachy_mini_conversation_app-main/src/reachy_mini_conversation_app/huggingface_realtime.py#L12) 클라이언트를 그대로 사용합니다. 
 하지만 실제 API 요청은 OpenAI 서버가 아닌 **Hugging Face의 S2S(Speech-to-Speech) 실시간 서버**로 전달되도록 엔드포인트를 우회(Redirect)하도록 되어 있습니다.
 

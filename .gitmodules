@@ -12,3 +12,6 @@
 [submodule "reachy_eyes"]
 	path = reachy_eyes
 	url = https://github.com/brainwavecollective/reachy-eyes.git
+[submodule "oss_reachymini"]
+	path = oss_reachymini
+	url = https://github.com/dreamrobot75/oss_reachymini
